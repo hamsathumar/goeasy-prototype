@@ -181,6 +181,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .pub-nav .on,.pub-nav-m .on{color:var(--green);box-shadow:inset 0 -3px 0 var(--gold)}
 .pub-nav-m{display:none}
 @media(max-width:900px){.pub-nav-m{display:flex;overflow-x:auto;gap:2px;padding:0 8px;border-top:1px solid var(--line);scrollbar-width:none}.pub-nav-m::-webkit-scrollbar{display:none}}
+.also{background:#fff;border-bottom:1px solid var(--line);padding:14px 0;font-size:15px}.also span{color:var(--muted)}.also a{font-weight:600}
 .more{display:flex;gap:16px;align-items:flex-start;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}
 .more:hover{border-color:var(--green);transform:translateY(-2px)}
 .more .ic{width:52px;height:52px;border-radius:12px;background:var(--gold-light);display:grid;place-items:center;color:var(--green);flex:none}
@@ -384,7 +385,7 @@ const MODE_LABEL = { MIXED:'Mixed (advance to GoEasy, balance to driver)', OWNER
 const MODE_SHORT = { MIXED:'Mixed', OWNER_COLLECTS_ALL:'Owner collects all', GOEASY_COLLECTS_ALL:'GoEasy collects all' };
 const SOURCE_LABEL = { WEBSITE:'Website', PHONE:'Phone', WHATSAPP:'WhatsApp', WALK_IN:'Walk-in' };
 const DOC_LABEL = { NIC:'NIC copy', DRIVING_LICENCE:'Driving licence', VEHICLE_REGISTRATION:'Vehicle registration (CR)', INSURANCE:'Insurance certificate', REVENUE_LICENCE:'Revenue licence', OTHER:'Other' };
-const KIND_LABEL = { AIRPORT:'Airport pickup & drop', PRIVATE:'Private vehicle hire', SEAT:'Sharing van seat', SHARED_AIRPORT:'Shared airport seat', BUS:'Bus seat' };
+const KIND_LABEL = { AIRPORT:'Airport pickup & drop', PRIVATE:'Private vehicle hire', SHARED_AIRPORT:'Shared airport seat', BUS:'Bus seat' };
 
 /* ---------- small utils ---------- */
 const $ = (s, r = document) => r.querySelector(s);
@@ -460,7 +461,7 @@ const KEY = 'goeasy-prototype-v1', SKEY = 'goeasy-prototype-session';
 let S;
 function load() {
   try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { S = null; }
-  if (!S || S.v !== 2) { S = seed(); save(); }
+  if (!S || S.v !== 3) { S = seed(); save(); }
   S.messages ||= []; S.outbox ||= []; S.custPayments ||= []; S.adjustments ||= [];
 }
 function save() {
@@ -488,7 +489,6 @@ const locName = id => loc(id)?.name || '–';
 const ownerById = id => S.owners.find(o => o.id === id);
 const vehicleById = id => S.vehicles.find(v => v.id === id);
 const customerById = id => S.customers.find(c => c.id === id);
-const scheduleById = id => S.schedules.find(s => s.id === id);
 const internalOwner = () => S.owners.find(o => o.isInternal);
 const ownerVehicles = oid => S.vehicles.filter(v => v.ownerId === oid);
 const ownerForUser = u => u && S.owners.find(o => o.userId === u.id);
@@ -535,47 +535,8 @@ function clashCheck({ bookingId, ownerId, vehicleId, pickupAt, passengers, airpo
     if (b.assignment.vehicleId === vehicleId) blocks.push(`Same vehicle is on ${b.code} at ${fmtTime(b.pickupAt.slice(11))} (${d} min apart).`);
     else if (b.assignment.ownerId === ownerId) warnings.push(`Same owner has ${b.code} at ${fmtTime(b.pickupAt.slice(11))} with ${vehicleById(b.assignment.vehicleId)?.regNo}. Check they have a driver for both.`);
   }
-  const date = pickupAt.slice(0, 10);
-  for (const s of S.schedules) {
-    if (!s.active || s.vehicleId !== vehicleId) continue;
-    for (const dd of [addDays(date, -1), date, addDays(date, 1)]) {
-      const d = Math.abs(toMin(dd + 'T' + s.time) - t);
-      if (d < W) blocks.push(`Vehicle runs the ${s.fromTown} to ${s.toTown} sharing van at ${fmtTime(s.time)} on ${fmtDay(dd)}.`);
-    }
-  }
   vehicleExpiry(v).forEach(x => warnings.push(x.text + '.'));
   return { blocks, warnings };
-}
-
-/* ---------- sharing van seats ---------- */
-function seatRows(n) {
-  if (n === 10) return [3, 3, 4];
-  if (n === 13) return [3, 3, 3, 4];
-  const r = []; let left = n; while (left > 0) { r.push(Math.min(3, left)); left -= 3; } return r;
-}
-const seatCount = sch => vehicleById(sch.vehicleId)?.seats || 10;
-function seatTakenMap(scheduleId, date) {
-  const m = {};
-  S.seatBookings.filter(b => b.scheduleId === scheduleId && b.date === date && b.status !== 'CANCELLED')
-    .forEach(b => b.seats.forEach(n => { m[n] = b; }));
-  return m;
-}
-const seatsLeft = (sch, date) => seatCount(sch) - Object.keys(seatTakenMap(sch.id, date)).length;
-function seatMapHtml(sch, date, selected = [], opts = {}) {
-  const taken = seatTakenMap(sch.id, date); let n = 0;
-  const rows = seatRows(seatCount(sch)).map(cnt => {
-    let cells = '';
-    for (let i = 0; i < cnt; i++) {
-      n++; const t = taken[n], sel = selected.includes(n);
-      if (t) cells += opts.admin
-        ? `<button type="button" class="seat taken named" title="${esc(t.contactName)} · ${esc(t.code)}" aria-label="Seat ${n}, taken by ${esc(t.contactName)}" disabled>${n}</button>`
-        : `<button type="button" class="seat taken" aria-label="Seat ${n}, taken" disabled>${n}</button>`;
-      else cells += `<button type="button" class="seat ${sel ? 'sel' : ''}" ${opts.readonly ? 'disabled' : ''} data-act="${opts.act || 'pickSeat'}" data-seat="${n}" aria-pressed="${sel}" aria-label="Seat ${n}, ${sel ? 'selected' : 'free'}">${n}</button>`;
-    }
-    return `<div class="seatrow">${cells}</div>`;
-  }).join('');
-  return `<div class="seatmap"><div class="front"><span>Front</span><span class="drv" aria-label="Driver">Driver</span></div>${rows}</div>
-  <div class="legend"><span><i></i>Free</span><span><i style="background:var(--gold);border-color:#b8902f"></i>Your pick</span><span><i style="background:#e6e9e5"></i>Taken</span></div>`;
 }
 
 /* ---------- settlement (mirrors src/lib/settlement.ts, CLAUDE.md 9.14) ---------- */
@@ -616,10 +577,9 @@ function syncTrip(t) { // a shared trip's money = its seat bookings (CLAUDE.md 9
   t.pickupAt = t.date + 'T' + t.time;
   return t;
 }
-const SEAT_KINDS = ['SEAT', 'SHARED_AIRPORT', 'BUS'];
+const SEAT_KINDS = ['SHARED_AIRPORT', 'BUS']; // seat bookings: shared airport seats and bus seats
 const isSeatBk = x => SEAT_KINDS.includes(x?.kind);
 function seatTime(x) { // departure time of a seat booking, or '' when not set yet
-  if (x.kind === 'SEAT') return scheduleById(x.scheduleId)?.time || '';
   if (x.kind === 'SHARED_AIRPORT') return x.tripId ? tripById(x.tripId)?.time || '' : '';
   return x.bus?.time || '';
 }
@@ -627,13 +587,12 @@ const dateOf = x => x.pickupAt ? x.pickupAt.slice(0, 10) : x.date;
 const whenOf = x => x.pickupAt || (x.date + 'T' + (seatTime(x) || '00:00'));
 const refundsOf = x => S.custPayments.filter(p => p.refId === x.id && p.kind === 'REFUND').reduce((s, p) => s + p.amount, 0);
 const keptFee = x => x.status === 'CANCELLED' && x.advancePaidAt && ['ADVANCE_KEPT', 'PARTIAL_REFUND'].includes(x.outcome) ? Math.max(x.advance - refundsOf(x), 0) : 0;
-function earningsBetween(from, to) { // GoEasy earnings by travel date (commission + margin + own fleet + sharing van + cancellation fees)
+function earningsBetween(from, to) { // GoEasy earnings by travel date (commission + margin + own fleet + cancellation fees)
   const inR = d => d >= from && d <= to;
   const bk = S.bookings.filter(b => b.status !== 'CANCELLED' && b.assignment && inR(dateOf(b))).reduce((s, b) => s + b.assignment.goeasyEarns, 0);
-  const van = S.seatBookings.filter(b => b.kind === 'SEAT' && b.status !== 'CANCELLED' && inR(b.date)).reduce((s, b) => s + b.total, 0);
   const shared = S.sharedTrips.filter(t => t.status !== 'CANCELLED' && t.assignment && inR(t.date)).reduce((s, t) => s + t.assignment.goeasyEarns, 0);
   const fees = [...S.bookings, ...S.seatBookings].filter(b => inR(dateOf(b))).reduce((s, b) => s + keptFee(b), 0);
-  return bk + van + shared + fees;
+  return bk + shared + fees;
 }
 const bagsOf = x => [x.bigBags || 0, x.smallBags || 0];
 const bagText = x => `${x.bigBags || 0} large, ${x.smallBags || 0} small bag${(x.smallBags || 0) === 1 ? '' : 's'}`;
@@ -797,8 +756,9 @@ function seed() {
   const T = today(), D = n => addDays(T, n), now = new Date().toISOString();
   const slug = s => 'loc-' + s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/-$/, '');
   const names = ['BIA Airport (Katunayake)','Colombo','Akkaraipattu','Kalmunai','Maruthamunai','Sainthamaruthu','Nintavur','Addalaichenai','Oluvil','Pottuvil','Ampara','Batticaloa','Kandy','Nuwara Eliya','Jaffna','Vavuniya','Polonnaruwa','Sigiriya','Wellawatta'];
-  const seatTowns = ['Akkaraipattu','Addalaichenai','Oluvil','Nintavur','Sainthamaruthu','Kalmunai','Maruthamunai','Batticaloa','Wellawatta','Colombo'];
-  const locations = names.map((n, i) => ({ id: i === 0 ? 'loc-bia' : slug(n), name: n, isAirport: i === 0, isSeatTown: seatTowns.includes(n), sortOrder: i, active: true, bookable: n !== 'Wellawatta' }));
+  // bus stops on the Colombo – Akkaraipattu bus line (SAMPLE list in route order; the client confirms it)
+  const seatTowns = ['Colombo','Wellawatta','Batticaloa','Maruthamunai','Kalmunai','Sainthamaruthu','Nintavur','Addalaichenai','Oluvil','Akkaraipattu'];
+  const locations = names.map((n, i) => ({ id: i === 0 ? 'loc-bia' : slug(n), name: n, isAirport: i === 0, isBusStop: seatTowns.includes(n), busOrder: seatTowns.indexOf(n), sortOrder: i, active: true, bookable: n !== 'Wellawatta' }));
   const L = n => locations.find(l => l.name === n).id;
   // car / van / kdh / shared seat per person / usual travel minutes (all SAMPLE values)
   const pr = (a, b, car, van, kdh, seat, mins) => ({ id: uid(), fromId: L(a), toId: L(b), car, van, kdh, seat, travelMinutes: mins, active: true });
@@ -833,13 +793,6 @@ function seed() {
   mkOwner({ id: 'o-ashraff', code: 'OW-005', userId: ou('u-ashraff', '94774567890', 'Ashraff Lebbe'), name: 'Ashraff Lebbe', mobile: '94774567890', nic: '199256789012', address: 'Addalaichenai', isInternal: false, commission: 15, approval: 'CHANGES_REQUESTED', approvalReason: 'Please upload a clear copy of your vehicle registration (CR). The photo is blurred.', status: 'ACTIVE', source: 'SELF_REGISTERED', demo: true,
     docs: [doc('NIC', 'ashraff-nic.jpg')] });
   mkVeh({ id: 'v-ep5566', ownerId: 'o-ashraff', regNo: 'EP-5566', model: 'Toyota Prius', cls: 'CAR', seats: 4, approval: 'PENDING', colour: 'Silver', demo: true, docs: [doc('VEHICLE_REGISTRATION', 'blurred-cr.jpg')] });
-
-  const schedules = [
-    { id: 'sch-1', fromTown: 'Akkaraipattu', toTown: 'Colombo', time: '19:30', vehicleId: 'v-632926', active: true },
-    { id: 'sch-2', fromTown: 'Akkaraipattu', toTown: 'Colombo', time: '20:30', vehicleId: 'v-nc1177', active: true },
-    { id: 'sch-3', fromTown: 'Colombo', toTown: 'Akkaraipattu', time: '05:00', vehicleId: 'v-581375', active: true },
-    { id: 'sch-4', fromTown: 'Colombo', toTown: 'Akkaraipattu', time: '15:00', vehicleId: 'v-632926', active: true },
-  ];
 
   const customers = [];
   const cust = (name, phone, country, optIn = false) => { const c = { id: uid(), name, phone, whatsapp: phone, email: null, country, optIn, createdAt: now, demo: true }; customers.push(c); return c; };
@@ -890,18 +843,6 @@ function seed() {
   });
 
   const seatBookings = [];
-  const mkS = (c, sch, date, seats, o = {}) => {
-    counters.seat++;
-    const total = seats.length * 3500;
-    seatBookings.push({ id: uid(), code: 'SEAT-' + counters.seat, token: randToken(), kind: 'SEAT', scheduleId: sch, date, customerId: c.id, contactName: c.name, contactPhone: c.phone, contactWhatsapp: c.phone,
-      pickupTown: 'Akkaraipattu', dropTown: 'Colombo', seats, pricePerSeat: 3500, total, advance: roundTo100(total * .25), advanceMethod: 'BANK_TRANSFER', advancePaidAt: null, status: 'NEW', source: 'WEBSITE', notes: '', createdAt: now, demo: true, ...o });
-  };
-  mkS(c3, 'sch-1', T, [1, 2], { status: 'CONFIRMED', advancePaidAt: now });
-  mkS(c7, 'sch-1', T, [5], { pickupTown: 'Nintavur' });
-  mkS(c5, 'sch-2', D(1), [3, 4, 6], { source: 'PHONE', status: 'CONFIRMED' });
-  mkS(c4, 'sch-3', D(1), [1], { pickupTown: 'Colombo', dropTown: 'Kalmunai' });
-  seatBookings.forEach(b => Object.assign(b, { seatsWanted: b.seats.length, bigBags: b.seats.length, smallBags: b.seats.length }));
-
   // shared airport seats: one grouped trip + requests waiting; one bus seat request
   const sharedTrips = [];
   counters.trip++;
@@ -918,8 +859,12 @@ function seed() {
   mkA(c7, { dropTown: 'Batticaloa', seatsWanted: 2, flightNo: 'G9 503', flightTime: '04:10', date: D(3), pricePerSeat: 6000 });
   counters.seat++;
   seatBookings.push({ id: uid(), code: 'SEAT-' + counters.seat, token: randToken(), kind: 'BUS', tripId: null, scheduleId: null, date: D(4), customerId: c3.id, contactName: c3.name, contactPhone: c3.phone, contactWhatsapp: c3.phone,
-    pickupTown: 'Colombo', dropTown: 'Kalmunai', seatsWanted: 2, seats: [], pricePerSeat: 0, total: 0, advance: 0, advanceMethod: 'NONE', advancePaidAt: null, status: 'NEW', source: 'WEBSITE', notes: 'Night bus please', bigBags: 1, smallBags: 2,
+    pickupTown: 'Colombo', dropTown: 'Kalmunai', seatsWanted: 2, seats: [], pricePerSeat: 0, total: 0, advance: 0, advanceMethod: 'NONE', advancePaidAt: null, status: 'NEW', source: 'WEBSITE', notes: '', prefTime: 'NIGHT', bigBags: 1, smallBags: 2,
     bus: null, createdAt: now, demo: true });
+  counters.seat++;
+  seatBookings.push({ id: uid(), code: 'SEAT-' + counters.seat, token: randToken(), kind: 'BUS', tripId: null, scheduleId: null, date: D(1), customerId: c7.id, contactName: c7.name, contactPhone: c7.phone, contactWhatsapp: c7.phone,
+    pickupTown: 'Akkaraipattu', dropTown: 'Colombo', seatsWanted: 1, seats: [14], pricePerSeat: 2500, total: 2500, advance: 600, advanceMethod: 'BANK_TRANSFER', advancePaidAt: now, status: 'CONFIRMED', source: 'PHONE', notes: '', prefTime: 'NIGHT', bigBags: 1, smallBags: 1,
+    bus: { operator: 'Super Line Travels', number: 'NB-4521', time: '21:00' }, createdAt: now, demo: true });
 
   // rentals (self-drive) and air ticket requests
   const rentalVehicles = [
@@ -946,10 +891,10 @@ function seed() {
   pay({ ownerId: 'o-rizwan', direction: 'OWNER_TO_GOEASY', amount: 1500, method: 'CASH', reference: '', paidOn: D(-1), status: 'PENDING_VERIFICATION', note: 'Paid at the office' });
 
   return {
-    v: 2,
+    v: 3,
     settings: {
       company: { name: 'AMS TOURS LANKA (PVT) LTD', brand: 'GoEasy Travels', reg: 'PV 00283916', phone: '076 477 5761', whatsapp: '075 283 5761', email: 'info@goeasy.lk', website: 'www.goeasy.lk', address: 'Akkaraipattu, Sri Lanka', tagline: 'Your Trusted Travel Partner.' },
-      advancePercent: 25, seatPrice: 3500, clashWindow: 120, samplePrices: true,
+      advancePercent: 25, clashWindow: 120, samplePrices: true,
       rules: { // operating rules (CLAUDE.md 9.21) – suggested defaults until the client confirms
         freeWaitAir: 60, freeWaitOther: 15, freeCancelHours: 24, noticePrivate: 6, noticeShared: 24, checkInMin: 180, sharedMaxWait: 60, sharedConfirmHours: 24, driverDueHours: 12,
         priceIncludes: 'Expressway tolls, airport parking up to 30 minutes, and 60 minutes free waiting after your flight lands.',
@@ -959,7 +904,7 @@ function seed() {
         airPartner: '[Licensed partner agency – to be confirmed]' },
       bankDetails: 'Bank: [Bank name – to be added]\nAccount name: AMS Tours Lanka (Pvt) Ltd\nAccount no.: [to be added]\nBranch: [to be added]\nPlease send the slip to us on WhatsApp.',
     },
-    locations, prices, users, owners, vehicles, customers, bookings, schedules, seatBookings, payments, counters,
+    locations, prices, users, owners, vehicles, customers, bookings, seatBookings, payments, counters,
     sharedTrips, rentalVehicles, rentalRequests, airRequests, adjustments, custPayments: [], outbox: [], messages: [],
     audit: [{ id: uid(), at: now, actor: 'System', action: 'seed', entity: 'system', entityId: '-', text: 'Demo data created.' }],
   };
@@ -1026,10 +971,8 @@ function freshWidget() {
   return { tab: 'AIRPORT', step: 1, dir: 'ARRIVING', town: 'loc-akkaraipattu', from: '', to: '', date: d1, time: '06:00', flightNo: '', flightTime: '05:45', pickup: '',
     adults: 2, children: 0, childSeats: 0, bigBags: 2, smallBags: 2, special: '', mode: null, cls: null,
     name: '', phone: '', hasWa: true, wa: '', country: 'Sri Lanka', email: '', notes: '', forOther: false, tName: '', tPhone: '', optIn: false, err: '',
-    shared: 'VAN',
     errField: '',
-    seat: { route: 'Akkaraipattu|Colombo', date: today(), scheduleId: null, on: 'Akkaraipattu', off: 'Colombo', seats: [] },
-    bus: { from: 'loc-colombo', to: 'loc-kalmunai', date: d1, seats: 2 },
+    bus: { from: 'Colombo', to: 'Akkaraipattu', date: d1, seats: 2, time: 'ANY' },
     rent: { type: 'CAR', vehicleId: null, start: addDays(today(), 2), end: addDays(today(), 5), place: 'BIA Airport (delivery)', licence: 'SL' },
     air: { returnTrip: false, from: 'Colombo (CMB)', to: '', depart: addDays(today(), 14), ret: addDays(today(), 44), adults: 1, children: 0, infants: 0, cabin: 'ECONOMY', airline: '' } };
 }
@@ -1041,6 +984,7 @@ function publicRoute() {
   if (a === 'booking' && b) return c === 'ticket' ? ticketPage(b) : c === 'quote' ? quotePage(b) : { html: pubShell(confirmPage(b)) };
   if (a === 'request' && b) return { html: pubShell(requestPage(b)) };
   if (a === 'rentals' || a === 'air-tickets') return { html: pubShell(servicePage(a === 'rentals' ? 'RENTAL' : 'AIR')) };
+  if (a === 'services') return { html: pubShell(moreServicesPage()) };
   if (['terms', 'partner-terms', 'privacy'].includes(a)) return { html: pubShell(staticPage(a)) };
   return { html: pubShell(`<div class="wrap section"><h2>Page not found</h2><a class="btn" href="#/">Go to home</a></div>`) };
 }
@@ -1056,13 +1000,13 @@ function pubShell(inner) {
     <div><div class="brand" style="color:#fff">${LOGO('#06452e', '#d6ad50')}<div><b>GoEasy Travels</b><span style="color:#a9c0b3">by ${esc(c.name)}</span></div></div><p style="margin-top:12px">${esc(c.tagline)}</p><p class="small">Reg. no. ${esc(c.reg)}</p></div>
     <div><h4>Contact us</h4><p>Phone: <a href="tel:${normPhone(c.phone)}">${esc(c.phone)}</a><br>WhatsApp: <a href="${waLink(goeasyWa(), 'Hello GoEasy Travels')}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a><br>Email: <a href="mailto:${esc(c.email)}">${esc(c.email)}</a><br>${esc(c.address)}</p>
       <p class="small">Help: ${esc(R_().supportHours)}<br>Arrival-day number: ${esc(R_().emergencyPhone)}</p></div>
-    <div><h4>More</h4><p><a href="#/partner/register">Partner with us</a><br><a href="#/terms">Terms</a> · <a href="#/privacy">Privacy</a> · <a href="#/partner-terms">Partner terms</a></p><p class="small">${esc(c.website)}</p></div>
+    <div><h4>More</h4><p><a href="#/services">All services</a> · <a href="#/rentals">Rentals</a> · <a href="#/air-tickets">Air tickets</a><br><a href="#/partner/register">Partner with us</a><br><a href="#/terms">Terms</a> · <a href="#/privacy">Privacy</a> · <a href="#/partner-terms">Partner terms</a></p><p class="small">${esc(c.website)}</p></div>
   </div></footer>`;
 }
-function pubNavLinks() {
-  const a = R.path[0] || '';
-  return `<button class="${!a && W.tab === 'AIRPORT' ? 'on' : ''}" data-act="wTab" data-tab="AIRPORT" data-scroll="1">Airport transfers</button><button class="${!a && W.tab === 'SHARED' ? 'on' : ''}" data-act="wTab" data-tab="SHARED" data-scroll="1">Van & bus seats</button>
-    <a href="#/rentals" class="${a === 'rentals' ? 'on' : ''}">Rentals</a><a href="#/air-tickets" class="${a === 'air-tickets' ? 'on' : ''}">Air tickets</a><button data-act="scrollTo" data-id="partner">Partner with us</button>`;
+function pubNavLinks() { // the three main services; rentals and air tickets live under "More services"
+  const a = R.path[0] || '', on = t => !a && W.tab === t ? 'on' : '';
+  return `<button class="${on('AIRPORT')}" data-act="wTab" data-tab="AIRPORT" data-scroll="1">Airport transfers</button><button class="${on('PRIVATE')}" data-act="wTab" data-tab="PRIVATE" data-scroll="1">Private trips</button><button class="${on('BUS')}" data-act="wTab" data-tab="BUS" data-scroll="1">Bus seats</button>
+    <a href="#/services" class="${['services', 'rentals', 'air-tickets'].includes(a) ? 'on' : ''}">More services</a><button data-act="scrollTo" data-id="partner">Partner with us</button>`;
 }
 ACT.scrollTo = el => {
   if (R.path.length) { go(''); setTimeout(() => document.getElementById(el.dataset.id)?.scrollIntoView({ behavior: 'smooth' }), 50); return; }
@@ -1071,19 +1015,13 @@ ACT.scrollTo = el => {
 
 function homePage() {
   const r = R_();
-  const more = (href, ic, t, d, cta) => `<a class="card more" href="${href}"><div class="ic">${ic}</div><div><h3>${t}</h3><p class="muted">${d}</p><span class="link">${cta} →</span></div></a>`;
-  const soon = ['Rosa bus hire', 'Tour packages', 'Wedding transport'];
   return `<section class="hero" id="book"><div class="hero-scene">${HERO_SCENE}</div><div class="wrap">
     <div class="hero-copy"><h1>Coming home or flying out? <em>We drive you from BIA to the East Coast.</em></h1>
       <p class="lead">Book a private car or van, or save with a shared seat. Fixed prices. We follow your flight.</p>
       <ul class="ticks"><li>${IC.tick}<span>We wait ${r.freeWaitAir} minutes after your flight lands, free.</span></li><li>${IC.tick}<span>Pay a small advance only. The rest on the day.</span></li><li>${IC.tick}<span>Book for your family from abroad. Help: ${esc(r.supportHours)}</span></li></ul></div>
     <div class="widget" aria-label="Booking form">${widgetHtml()}</div>
   </div></section>
-  <section class="section" id="services"><div class="wrap"><h2>More from GoEasy</h2><p class="muted">Not an airport trip? We can still help.</p>
-    <div class="grid g2" style="margin-top:20px">
-      ${more('#/rentals', IC.car, 'Self-drive rentals', 'Cars and motorbikes by the day, without a driver. Send a request and we call you to arrange it.', 'Rent a car or bike')}
-      ${more('#/air-tickets', IC.plane, 'Air tickets', 'Tell us where and when you fly. We find fares and book through our licensed partner.', 'Ask for air tickets')}</div>
-    <div class="row wrapx" style="margin-top:14px;gap:8px"><span class="small muted">Coming soon:</span>${soon.map(x => `<span class="soon" aria-disabled="true">${x}</span>`).join('')}</div></div></section>
+  <section class="also" id="services"><div class="wrap"><span>Also from GoEasy:</span> <a href="#/rentals">Self-drive rentals</a> · <a href="#/air-tickets">Air tickets</a> · <a href="#/services">All services</a></div></section>
   <section class="section" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><div class="wrap"><h2>How airport booking works</h2>
     <div class="grid g3" style="margin-top:20px">
       <div class="stack"><div class="stepn">1</div><h3>Tell us your flight</h3><p class="muted">Your flight, your town, how many people and bags. You see the price straight away.</p></div>
@@ -1093,13 +1031,24 @@ function homePage() {
   <section class="section" id="partner"><div class="wrap"><div class="cta"><div><h2>Own a van or car? Earn with GoEasy.</h2><p style="color:#c4d3ca;max-width:560px;margin:0">Register your vehicle, get airport and private trips from us, and see your trips and earnings on your phone.</p></div>
     <a class="btn btn-gold" href="#/partner/register">Register as a partner</a></div></div></section>`;
 }
+function moreServicesPage() {
+  const more = (href, ic, t, d, cta) => `<a class="card more" href="${href}"><div class="ic">${ic}</div><div><h3>${t}</h3><p class="muted">${d}</p><span class="link">${cta} →</span></div></a>`;
+  const main = (tab, t, d) => `<button class="card more" data-act="wTab" data-tab="${tab}" data-scroll="1" style="text-align:left;font:inherit;width:100%"><div><h3>${t}</h3><p class="muted" style="margin:0">${d}</p></div></button>`;
+  return `<div class="wrap section"><h1>Our services</h1>
+    <h2 style="margin-top:20px;font-size:20px">Book a ride</h2><div class="grid g3" style="margin-top:12px">
+      ${main('AIRPORT', 'Airport transfers', 'To or from BIA. Private vehicle or a shared seat.')}${main('PRIVATE', 'Private trips', 'A car or van with driver, any town to any town.')}${main('BUS', 'Bus seats', 'Colombo – Akkaraipattu and the towns in between.')}</div>
+    <h2 style="margin-top:28px;font-size:20px">More services</h2><p class="muted">Send a request. We call you to arrange it. No payment on this website.</p><div class="grid g2" style="margin-top:12px">
+      ${more('#/rentals', IC.car, 'Self-drive rentals', 'Cars and motorbikes by the day, without a driver.', 'Rent a car or bike')}
+      ${more('#/air-tickets', IC.plane, 'Air tickets', 'Tell us where and when you fly. We find fares through our licensed partner.', 'Ask for air tickets')}</div>
+    <div class="row wrapx" style="margin-top:16px;gap:8px"><span class="small muted">Coming soon:</span>${['Rosa bus hire', 'Tour packages', 'Wedding transport'].map(x => `<span class="soon" aria-disabled="true">${x}</span>`).join('')}</div></div>`;
+}
 function servicePage(tab) { // rentals and air tickets live on their own pages, not in the airport hero
   if (W.tab !== tab) { W.tab = tab; W.step = 1; W.err = ''; W.errField = ''; }
   const rental = tab === 'RENTAL';
   const steps = rental ? ['Choose a car or motorbike and your dates.', 'We call or WhatsApp you to agree the price, deposit and documents.', 'Collect the vehicle and drive. No payment on this website.']
     : ['Tell us your route, dates and travellers.', 'We find fares and send them to you on WhatsApp.', 'Reply to book. We issue the ticket through our licensed partner.'];
   return `<section class="hero hero-sm"><div class="wrap">
-    <div class="hero-copy"><a href="#/" class="small" style="color:#cfe0d6">GoEasy Travels</a><h1>${rental ? 'Self-drive <em>rentals</em>' : 'Air <em>tickets</em>'}</h1>
+    <div class="hero-copy"><a href="#/services" class="small" style="color:#cfe0d6">← All services</a><h1>${rental ? 'Self-drive <em>rentals</em>' : 'Air <em>tickets</em>'}</h1>
       <p class="lead">${rental ? 'Cars and motorbikes by the day, without a driver. Need a driver? Book a private trip instead.' : `Flights to and from Sri Lanka. Booked through ${esc(R_().airPartner)}.`}</p>
       <ol class="howto">${steps.map(x => `<li>${x}</li>`).join('')}</ol>
       ${rental ? '' : '<p class="small" style="color:#cfe0d6">We do not keep passport details on this website. We ask for them on WhatsApp when we book.</p>'}</div>
@@ -1107,7 +1056,8 @@ function servicePage(tab) { // rentals and air tickets live on their own pages, 
 }
 /* ---------- booking widget (CLAUDE.md 10.1) ---------- */
 const activeLocs = () => S.locations.filter(l => l.active && l.bookable !== false).sort((a, b) => a.sortOrder - b.sortOrder);
-const seatTowns = () => S.locations.filter(l => l.active && l.isSeatTown).sort((a, b) => a.sortOrder - b.sortOrder).map(l => l.name);
+const busStops = () => S.locations.filter(l => l.active && l.isBusStop).sort((a, b) => (a.busOrder ?? 99) - (b.busOrder ?? 99) || a.sortOrder - b.sortOrder).map(l => l.name); // route order
+const BUS_TIME = { ANY: 'Any time', MORNING: 'Morning', DAY: 'Day', NIGHT: 'Night' };
 const seatPriceFor = (fromId, toId) => findRoute(fromId, toId)?.seat || null;
 const paxW = () => (+W.adults || 0) + (+W.children || 0);
 function wTrip() {
@@ -1119,14 +1069,14 @@ function wWhen() { // the pickup date-time this booking will use
   if (W.dir === 'ARRIVING') return W.date + 'T' + W.flightTime;
   return W.pickup || suggestPickup(W.date + 'T' + W.flightTime, W.town);
 }
-const STEP_NAMES = { AIRPORT: ['Your flight', 'Shared or private', 'Your details'], PRIVATE: ['Your trip', 'Choose a vehicle', 'Your details'], SHARED: ['Seats', 'Your details'], RENTAL: ['Vehicle and dates', 'Your details'], AIR: ['Your flight', 'Your details'] };
-const HERO_TABS = [['AIRPORT', 'Airport', 'To or from BIA'], ['PRIVATE', 'Private trip', 'Any town'], ['SHARED', 'Van & bus seats', 'Pay per seat']];
+const STEP_NAMES = { AIRPORT: ['Your flight', 'Shared or private', 'Your details'], PRIVATE: ['Your trip', 'Choose a vehicle', 'Your details'], BUS: ['Your bus trip', 'Your details'], RENTAL: ['Vehicle and dates', 'Your details'], AIR: ['Your flight', 'Your details'] };
+const HERO_TABS = [['AIRPORT', 'Airport', 'To or from BIA'], ['PRIVATE', 'Private trip', 'Any town'], ['BUS', 'Bus seats', 'Colombo – Akkaraipattu']];
 function widgetHtml(fixed) { // fixed = the rental / air ticket pages (no tabs)
   if (!fixed && !HERO_TABS.some(t => t[0] === W.tab)) { W.tab = 'AIRPORT'; W.step = 1; }
   const names = STEP_NAMES[W.tab], n = names.length, cur = Math.min(W.step, n);
   let body;
   if (W.tab === 'AIRPORT' || W.tab === 'PRIVATE') body = W.step === 1 ? wTripStep() : W.step === 2 ? wChooseStep() : wDetailsStep();
-  else if (W.tab === 'SHARED') body = W.step === 1 ? (W.shared === 'VAN' ? wSeatStep() : wBusStep()) : wDetailsStep();
+  else if (W.tab === 'BUS') body = W.step === 1 ? wBusStep() : wDetailsStep();
   else if (W.tab === 'RENTAL') body = W.step === 1 ? wRentStep() : wDetailsStep();
   else body = W.step === 1 ? wAirStep() : wDetailsStep();
   return `${fixed ? '' : `<div class="wtabs" role="tablist" aria-label="What do you want to book?">${HERO_TABS.map(([k, l, sub]) => `<button role="tab" aria-selected="${W.tab === k}" class="${W.tab === k ? 'on' : ''}" data-act="wTab" data-tab="${k}">${l}<small>${sub}</small></button>`).join('')}</div>`}
@@ -1208,37 +1158,17 @@ function wChooseStep() {
     ${air ? `<h3 class="wh">Share and save</h3>${shared}<h3 class="wh">Or a private vehicle, just for you</h3>` : `<h3 class="wh">Choose a vehicle</h3>`}${cards}
     ${pax > 12 ? `<div class="warnbox">For more than 12 people, please call or WhatsApp us on ${esc(S.settings.company.whatsapp)}.</div>` : ''}</div>`;
 }
-function wSeatStep() {
-  const routes = [...new Set(S.schedules.filter(s => s.active).map(s => s.fromTown + '|' + s.toTown))];
-  const st = W.seat; const [from, to] = st.route.split('|');
-  const deps = S.schedules.filter(s => s.active && s.fromTown === from && s.toTown === to).sort((a, b) => a.time.localeCompare(b.time));
-  const nowT = nowLocal(), towns = seatTowns(), sch = st.scheduleId && scheduleById(st.scheduleId);
-  return `<div class="stack">${sharedSwitch()}
-    <div><label class="f" for="s-route">Route</label><select class="input" id="s-route" data-live="seat" name="route">${routes.map(r => opt(r, r.replace('|', ' to '), st.route)).join('')}</select></div>
-    <div><label class="f" for="s-date">Travel date</label><input class="input" type="date" id="s-date" name="date" min="${today()}" value="${esc(st.date)}" data-live="seat"></div>
-    <div><span class="f" style="display:block;font-weight:600;font-size:14px;margin-bottom:6px">Departure</span><div class="chips">${deps.map(d => {
-      const left = seatsLeft(d, st.date), past = (st.date + 'T' + d.time) <= nowT;
-      return `<button type="button" class="chip ${st.scheduleId === d.id ? 'on' : ''}" data-act="seatDep" data-id="${d.id}" ${left <= 0 || past ? 'disabled' : ''} aria-pressed="${st.scheduleId === d.id}">${fmtTime(d.time)} <span class="c">${past ? 'departed' : left <= 0 ? 'full' : left + ' seats left'}</span></button>`;
-    }).join('') || '<span class="muted">No departures on this route.</span>'}</div></div>
-    <div class="grid g2 keep2"><div><label class="f" for="s-on">Get on at</label><select class="input" id="s-on" name="on" data-live="seat">${towns.map(t => opt(t, t, st.on)).join('')}</select></div>
-      <div><label class="f" for="s-off">Get off at</label><select class="input" id="s-off" name="off" data-live="seat">${towns.map(t => opt(t, t, st.off)).join('')}</select></div></div>
-    ${sch ? `<div><span class="f" style="display:block;font-weight:600;font-size:14px;margin-bottom:6px">Pick your seats</span>${seatMapHtml(sch, st.date, st.seats)}</div>
-      <div class="summary-line"><span>${st.seats.length ? `Seat${st.seats.length > 1 ? 's' : ''} ${st.seats.join(', ')} · <b>${rs(st.seats.length * S.settings.seatPrice)}</b>` : 'No seats picked yet'}</span><span class="small muted">${rs(S.settings.seatPrice)} per seat</span></div>` : ''}
-    ${sch ? `<fieldset class="wgroup"><legend>Luggage</legend>${stepper('bigBags', W.bigBags, 0, 10, 'Large bags', 'Suitcases, boxes')}${stepper('smallBags', W.smallBags, 0, 10, 'Small bags', 'Hand luggage')}</fieldset>` : ''}
-    <button class="btn btn-gold btn-block" data-act="wSeatNext" ${sch && st.seats.length ? '' : 'disabled'}>${sch && st.seats.length ? 'Continue' : sch ? 'Tap a free seat to continue' : 'Choose a departure to continue'}</button></div>`;
-}
-const sharedSwitch = () => `<div class="seg seg2" role="group" aria-label="Van or bus"><button type="button" class="${W.shared === 'VAN' ? 'on' : ''}" data-act="wShared2" data-v="VAN" aria-pressed="${W.shared === 'VAN'}">Sharing van<small>Pick your seat</small></button><button type="button" class="${W.shared === 'BUS' ? 'on' : ''}" data-act="wShared2" data-v="BUS" aria-pressed="${W.shared === 'BUS'}">Bus<small>We book the seats</small></button></div>
-  <p class="small muted" style="margin:0">${W.shared === 'VAN' ? 'Our daily van between Akkaraipattu and Colombo. Choose a departure, then tap your seats.' : 'Tell us the route and how many seats. We book with the bus company and send you the bus and seat numbers.'}</p>
-  <p class="tiny muted" style="margin:0">Landing at BIA? Shared airport seats are on the <button type="button" class="link tiny" data-act="wTab" data-tab="AIRPORT">Airport</button> tab.</p>`;
 function wBusStep() {
-  const locs = activeLocs().filter(l => !l.isAirport), b = W.bus;
-  return `<div class="stack">${sharedSwitch()}
-    <div class="grid g2 keep2"><div><label class="f" for="b-from">From</label><select class="input" id="b-from" name="from" data-live="bus">${locs.map(l => opt(l.id, l.name, b.from)).join('')}</select></div>
-      <div><label class="f" for="b-to">To</label><select class="input" id="b-to" name="to" data-live="bus">${locs.map(l => opt(l.id, l.name, b.to)).join('')}</select></div></div>
+  const stops = busStops(), b = W.bus;
+  return `<div class="stack">
+    <p class="small muted" style="margin:0">Seats on buses between Colombo and Akkaraipattu, and the towns in between. Tell us where you get on and off. We book the seats with the bus company and send you the bus and seat numbers on WhatsApp.</p>
+    <div class="grid g2 keep2"><div><label class="f" for="b-from">Get on at</label><select class="input" id="b-from" name="from" data-live="bus">${stops.map(t => opt(t, t, b.from)).join('')}</select></div>
+      <div><label class="f" for="b-to">Get off at</label><select class="input" id="b-to" name="to" data-live="bus">${stops.map(t => opt(t, t, b.to)).join('')}</select></div></div>
     <div class="grid g2 keep2"><div><label class="f" for="b-date">Travel date</label><input class="input" type="date" id="b-date" name="date" min="${today()}" value="${esc(b.date)}" data-live="bus"></div>
-      <div></div></div>
-    ${stepper('seats', b.seats, 1, 10, 'Seats needed', '', 'bus')}
+      <div><label class="f" for="b-time">When do you want to travel?</label><select class="input" id="b-time" name="time" data-live="bus">${Object.entries(BUS_TIME).map(([k, l]) => opt(k, l, b.time)).join('')}</select></div></div>
+    ${stepper('seats', b.seats, 1, 10, 'Seats needed', 'One seat for each person', 'bus')}
     <fieldset class="wgroup"><legend>Luggage</legend>${stepper('bigBags', W.bigBags, 0, 10, 'Large bags', 'Suitcases, boxes')}${stepper('smallBags', W.smallBags, 0, 10, 'Small bags', 'Hand luggage')}</fieldset>
+    <p class="tiny muted" style="margin:0">Landing at BIA? Shared seats from the airport are on the <button type="button" class="link tiny" data-act="wTab" data-tab="AIRPORT">Airport</button> tab.</p>
     <button class="btn btn-gold btn-block" data-act="wBusNext">Continue</button></div>`;
 }
 function wRentStep() {
@@ -1268,8 +1198,7 @@ function wAirStep() {
     <button class="btn btn-gold btn-block" data-act="wAirNext">Continue</button></div>`;
 }
 function wPriced() { // what the details step is booking, and its price
-  if (W.tab === 'SHARED' && W.shared === 'VAN') { const st = W.seat, sch = scheduleById(st.scheduleId); return { kind: 'SEAT', total: st.seats.length * S.settings.seatPrice, line: `<b>${esc(st.on)} to ${esc(st.off)}</b><br>${fmtDay(st.date)}, ${fmtTime(sch.time)} · Seat${st.seats.length > 1 ? 's' : ''} ${st.seats.join(', ')}`, back: 1 }; }
-  if (W.tab === 'SHARED') { const b = W.bus; return { kind: 'BUS', total: 0, request: true, line: `<b>${esc(locName(b.from))} to ${esc(locName(b.to))}</b><br>${fmtDay(b.date)} · ${b.seats} bus seat${b.seats > 1 ? 's' : ''}`, back: 1 }; }
+  if (W.tab === 'BUS') { const b = W.bus; return { kind: 'BUS', total: 0, request: true, line: `<b>Bus: ${esc(b.from)} to ${esc(b.to)}</b><br>${fmtDay(b.date)} · ${BUS_TIME[b.time].toLowerCase()} · ${b.seats} seat${b.seats > 1 ? 's' : ''}`, back: 1 }; }
   if (W.tab === 'RENTAL') { const r = W.rent, v = S.rentalVehicles.find(x => x.id === r.vehicleId), days = Math.max(daysBetween(r.start, r.end), 1); return { kind: 'RENTAL', total: days * v.pricePerDay, request: true, line: `<b>${esc(v.model)}</b> (self-drive)<br>${fmtDay(r.start)} to ${fmtDay(r.end)} · ${esc(r.place)}`, back: 1 }; }
   if (W.tab === 'AIR') { const a = W.air; return { kind: 'AIR', total: 0, request: true, line: `<b>${esc(a.from)} to ${esc(a.to)}</b>${a.returnTrip ? ' and back' : ''}<br>${fmtDay(a.depart)}${a.returnTrip ? ' – ' + fmtDay(a.ret) : ''} · ${+a.adults + +a.children + +a.infants} traveller(s)`, back: 1 }; }
   const t = wTrip(), when = wWhen();
@@ -1316,19 +1245,12 @@ function wDetailsStep() {
 }
 ACT.wFor = el => { W.forOther = el.dataset.v === '1'; rerender(); };
 LIVE.w = el => { W[el.name] = el.type === 'checkbox' ? el.checked : el.value; if (['flightTime', 'date', 'town'].includes(el.name)) W.pickup = ''; if (el.dataset.rr) rerender(); };
-LIVE.seat = el => {
-  const st = W.seat; st[el.name] = el.value;
-  if (el.name === 'route') { const [f, t] = el.value.split('|'); st.on = f; st.off = t; st.scheduleId = null; st.seats = []; }
-  if (el.name === 'date') { st.scheduleId = null; st.seats = []; }
-  W.err = ''; rerender();
-};
 LIVE.bus = el => { W.bus[el.name] = el.value; };
 LIVE.rent = el => { W.rent[el.name] = el.value; if (el.name === 'start' && W.rent.end < el.value) W.rent.end = addDays(el.value, 1); rerender(); };
 LIVE.air = el => { W.air[el.name] = el.value; };
 ACT.wTab = el => { if (el.dataset.tab === 'RENTAL' || el.dataset.tab === 'AIR') return go(el.dataset.tab === 'RENTAL' ? 'rentals' : 'air-tickets'); W.tab = el.dataset.tab; W.step = 1; W.err = ''; W.cls = null; W.mode = null; if (el.dataset.scroll) { go(''); } rerender(); if (el.dataset.scroll) $('#book').scrollIntoView({ behavior: 'smooth' }); };
 ACT.wDir = el => { W.dir = el.dataset.dir; W.pickup = ''; rerender(); };
 ACT.wStep = el => { W.step = +el.dataset.step; W.err = ''; rerender(); };
-ACT.wShared2 = el => { W.shared = el.dataset.v; W.err = ''; rerender(); };
 ACT.wRentType = el => { W.rent.type = el.dataset.v; W.rent.vehicleId = null; rerender(); };
 ACT.wRentPick = el => { W.rent.vehicleId = el.dataset.id; rerender(); };
 ACT.wAirRet = el => { W.air.returnTrip = el.dataset.v === '1'; rerender(); };
@@ -1345,17 +1267,9 @@ ACT.wNext1 = () => {
 };
 ACT.wClass = el => { W.mode = 'PRIVATE'; W.cls = el.dataset.cls; W.step = 3; W.err = ''; rerender(); };
 ACT.wShared = () => { W.mode = 'SHARED'; W.cls = null; W.step = 3; W.err = ''; rerender(); };
-ACT.seatDep = el => { W.seat.scheduleId = el.dataset.id; W.seat.seats = []; W.err = ''; rerender(); };
-ACT.pickSeat = el => { const n = +el.dataset.seat, s = W.seat.seats; const i = s.indexOf(n); i >= 0 ? s.splice(i, 1) : s.push(n); s.sort((a, b) => a - b); rerender(); };
-ACT.wSeatNext = () => {
-  const st = W.seat; W.err = '';
-  if (st.on === st.off) W.err = 'Get on and get off towns must be different.';
-  else if (!st.scheduleId || !st.seats.length) W.err = 'Please pick a departure and at least one seat.';
-  if (!W.err) W.step = 2; rerender();
-};
 ACT.wBusNext = () => {
   const b = W.bus; W.err = '';
-  if (b.from === b.to) W.err = 'From and To must be different.';
+  if (b.from === b.to) W.err = 'Get on and get off must be different towns.';
   else if (!b.date || b.date < today()) W.err = 'Please choose today or a later date.';
   else if (!noticeOk(b.date + 'T23:59', true)) W.err = `Bus seats need ${R_().noticeShared} hours notice. For urgent trips, please WhatsApp us.`;
   if (!W.err) W.step = 2; rerender();
@@ -1416,20 +1330,9 @@ FORM.book = (f, d) => {
     notifyNew('air ticket request', x.code, `${x.contactName}, ${x.from} to ${x.to}, ${fmtDate(x.departDate)}.`, d.email);
     return done('Request', x, 'request');
   }
-  if (P.kind === 'SEAT') {
-    const st = W.seat, sch = scheduleById(st.scheduleId), taken = seatTakenMap(sch.id, st.date);
-    if (st.seats.some(n => taken[n])) { st.seats = st.seats.filter(n => !taken[n]); W.step = 1; W.err = 'Sorry, one of your seats was just taken. Please pick again.'; return rerender(); }
-    if ((st.date + 'T' + sch.time) <= nowLocal()) { W.step = 1; W.err = 'This van has already left. Please choose another departure.'; return rerender(); }
-    const total = st.seats.length * S.settings.seatPrice;
-    const sb = { id: uid(), code: nextCode('seat'), token: randToken(), kind: 'SEAT', scheduleId: sch.id, tripId: null, date: st.date, ...contact, traveller, ...bags,
-      pickupTown: st.on, dropTown: st.off, seats: [...st.seats], seatsWanted: st.seats.length, pricePerSeat: S.settings.seatPrice, total, advance: advanceFor(total), advanceMethod: 'BANK_TRANSFER', advancePaidAt: null, status: 'NEW', source: 'WEBSITE', notes: d.notes, createdAt: now };
-    S.seatBookings.push(sb); audit('seat.create', 'seat', sb.id, `${sb.code} booked on the website (seats ${sb.seats.join(', ')}).`);
-    notifyNew('seat booking', sb.code, `${sb.contactName}, ${sb.pickupTown} to ${sb.dropTown}, ${fmtDate(sb.date)} ${fmtTime(sch.time)}, seats ${sb.seats.join(', ')}.`, d.email);
-    return done('Booking', sb, 'booking');
-  }
   if (P.kind === 'BUS') {
     const b = W.bus;
-    const sb = { id: uid(), code: nextCode('seat'), token: randToken(), kind: 'BUS', scheduleId: null, tripId: null, date: b.date, ...contact, traveller, ...bags, pickupTown: locName(b.from), dropTown: locName(b.to),
+    const sb = { id: uid(), code: nextCode('seat'), token: randToken(), kind: 'BUS', scheduleId: null, tripId: null, date: b.date, prefTime: b.time, ...contact, traveller, ...bags, pickupTown: b.from, dropTown: b.to,
       seats: [], seatsWanted: +b.seats, pricePerSeat: 0, total: 0, advance: 0, advanceMethod: 'NONE', advancePaidAt: null, status: 'NEW', source: 'WEBSITE', notes: d.notes, bus: null, createdAt: now };
     S.seatBookings.push(sb); audit('seat.create', 'seat', sb.id, `${sb.code} bus seat request from the website.`);
     notifyNew('bus seat request', sb.code, `${sb.contactName}, ${sb.pickupTown} to ${sb.dropTown}, ${fmtDate(sb.date)}, ${sb.seatsWanted} seats.`, d.email);
@@ -1977,7 +1880,7 @@ FORM.changePassword = (f, d) => {
 /* =====================================================================
    ADMIN DASHBOARD
    ===================================================================== */
-const UI = { asg: null, seatAdd: null, msg: null };
+const UI = { asg: null, msg: null };
 function adminRoute() {
   const [, a, b, c, d] = R.path;
   if (a === 'login') return { html: adminLogin() };
@@ -2027,15 +1930,17 @@ function aShell(u, page, inner) {
   const c = counts();
   const airportOpen = S.bookings.filter(b => b.kind === 'AIRPORT' && ['NEW', 'QUOTE_REQUESTED', 'CONFIRMED'].includes(b.status)).length;
   if (page === 'bookings' && R.q.kind === 'AIRPORT') page = 'bookings?kind=AIRPORT';
+  if (page === 'shared-trips') page = 'shared-trips?tab=' + (R.q.tab === 'bus' ? 'bus' : 'airport');
+  const waitAir = S.seatBookings.filter(b => b.kind === 'SHARED_AIRPORT' && b.status === 'NEW' && !b.tripId).length, waitBus = S.seatBookings.filter(b => b.kind === 'BUS' && b.status === 'NEW').length;
   const groups = [['', [['dashboard', 'Dashboard']]],
-    ['Trips', [['bookings', 'All bookings', c.bookings], ['bookings?kind=AIRPORT', 'Airport bookings', airportOpen], ['shared-trips', 'Shared seats and trips', c.seats]]],
+    ['Trips', [['bookings', 'All bookings', c.bookings], ['bookings?kind=AIRPORT', 'Airport bookings', airportOpen], ['shared-trips?tab=airport', 'Shared airport seats', waitAir], ['shared-trips?tab=bus', 'Bus seats', waitBus]]],
     ['Requests', [['rentals', 'Rentals', c.rentals], ['air-tickets', 'Air tickets', c.air]]],
     ['Partners', [['owners', 'Owners and vehicles'], ['approvals', 'Approvals', c.approvals]]],
     ['Money', [['finance', 'Finance', c.payments]]],
     ['Customers', [['customers', 'Customer list'], ['messages', 'Messages']]],
     ['Setup', [['prices', 'Prices'], ['settings', 'Settings']]]];
   const link = ([k, l, n]) => `<a class="nav ${page === k ? 'on' : ''}" href="#/admin/${k === 'dashboard' ? '' : k}" ${page === k ? 'aria-current="page"' : ''}><span>${l}</span>${n ? `<span class="badge" aria-label="${n} waiting">${n}</span>` : ''}</a>`;
-  inner = withHelp(page.split('?')[0], inner);
+  inner = withHelp(page.startsWith('shared-trips') ? page : page.split('?')[0], inner);
   return `<div class="admin"><aside class="side" aria-label="Admin menu"><a class="brand" href="#/admin">${LOGO()}<div><b>GoEasy Admin</b><span>AMS Tours Lanka</span></div></a>
     ${groups.map(([h, items]) => `${h ? `<div class="navh">${h}</div>` : ''}${items.map(link).join('')}`).join('')}
     <div class="me">Signed in as<br><b style="color:#fff">${esc(u.name)}</b><br><button class="link" style="color:var(--gold)" data-act="signOut">Sign out</button></div></aside>
@@ -2045,7 +1950,8 @@ function aShell(u, page, inner) {
 /* ---------- page guides: one line on what the page is for, plus how to use it ---------- */
 const HELP = {
   bookings: ['Every private car, van and KDH trip, from the website and from phone or WhatsApp.', ['Open a booking to confirm it, set a quote price or mark the advance received.', 'Assign a vehicle on the right side of the booking. The money breakdown updates as you type.', 'After the trip, mark it completed. The owner\'s settlement then becomes due.']],
-  'shared-trips': ['Seats sold one by one: shared airport seats, the daily sharing van, and bus seats.', ['Airport: tick the waiting requests on the same day, then create a trip with one departure time.', 'Open the trip, send each passenger the departure details on WhatsApp, and assign a vehicle.', 'Sharing van and Bus: use the tabs above.']],
+  'shared-trips?tab=airport': ['Shared seats from and to BIA. Passengers on nearby flights share one vehicle.', ['Tick the waiting requests on the same day and direction.', 'Create a trip with one departure time (or add them to an open trip).', 'Open the trip, send each passenger the departure details on WhatsApp, and assign a vehicle.']],
+  'shared-trips?tab=bus': ['Bus seats between Colombo and Akkaraipattu. Buses belong to bus companies, not to GoEasy.', ['Book the seats with the bus company.', 'Enter the bus, departure time, seat numbers and price, then press Confirm seats.', 'Send the e-ticket on WhatsApp.']],
   rentals: ['Self-drive requests. No payment happens on the website.', ['Call or WhatsApp the customer.', 'Change the status as you go: Contacted, Confirmed, Completed.', 'Write the agreed price and deposit notes so the team can see them.']],
   'air-tickets': ['Air ticket requests, booked through the licensed partner.', ['Check fares with the partner.', 'Enter the fare and your service fee, set the status to Quoted, and send the fares on WhatsApp.', 'When the ticket is issued, set Ticketed.']],
   finance: ['All platform money in one place: what customers paid, what owners collected, commission, and who owes whom.', ['Overview: the numbers for a date range.', 'Owner settlements: verify payments owners record, and pay owners what GoEasy owes.', 'Reports: print or export for the accountant.']],
@@ -2121,7 +2027,7 @@ function aDashboard(u) {
   const changes = [...S.bookings, ...S.seatBookings, ...S.rentalRequests, ...S.airRequests].filter(x => x.changeRequestedAt && !x.changeHandledAt && x.status !== 'CANCELLED').length;
   const items = [[changes, 'Customer change requests', 'bookings?status=CHANGE'], [overdue, 'Shared seat requests overdue (tell the time now)', 'shared-trips'], [noDriver, `Trips without driver details (next ${r.driverDueHours} h)`, 'bookings?status=ASSIGNED'], [flightToday, 'Airport arrivals today: flight not checked', 'bookings?kind=AIRPORT&status=FLIGHT'],
     [n('QUOTE_REQUESTED'), 'Quotes to price', 'bookings?status=QUOTE_REQUESTED'], [n('NEW'), 'New bookings to confirm', 'bookings?status=NEW'], [n('CONFIRMED'), 'Confirmed, no vehicle yet', 'bookings?status=CONFIRMED'],
-    [waiting.length - overdue, 'Shared seat requests to group', 'shared-trips'], [tripsNoVehicle, 'Shared trips without a vehicle', 'shared-trips'], [S.seatBookings.filter(b => b.kind === 'BUS' && b.status === 'NEW').length, 'Bus seat requests to book', 'shared-trips'], [S.seatBookings.filter(b => b.kind === 'SEAT' && b.status === 'NEW').length, 'New sharing van bookings', 'shared-trips'],
+    [waiting.length - overdue, 'Shared seat requests to group', 'shared-trips'], [tripsNoVehicle, 'Shared trips without a vehicle', 'shared-trips'], [S.seatBookings.filter(b => b.kind === 'BUS' && b.status === 'NEW').length, 'Bus seat requests to book', 'shared-trips?tab=bus'],
     [c.rentals, 'New rental requests', 'rentals'], [c.air, 'New air ticket requests', 'air-tickets'],
     [advDue, 'Advances not received', 'bookings?status=ADVANCE_DUE'], [c.approvals, 'Owners and vehicles to approve', 'approvals'], [c.payments, 'Owner payments to verify', 'finance?tab=owners'], [expiring, 'Vehicles with documents expiring', 'owners?filter=expiry']].filter(x => x[0] > 0);
   const next7 = S.bookings.filter(b => b.status !== 'CANCELLED' && b.pickupAt >= now && b.pickupAt <= addDays(T, 7) + 'T23:59').sort((a, b) => a.pickupAt.localeCompare(b.pickupAt));
@@ -2461,70 +2367,7 @@ FORM.adminBooking = (f, d) => {
   go('admin/bookings/' + b.id); toast('Booking saved.');
 };
 
-/* ---------- sharing van ---------- */
-function vanSection() {
-  const date = R.q.date || today();
-  const sch = S.schedules.filter(s => s.active).sort((a, b) => a.time.localeCompare(b.time));
-  const fleetVeh = ownerVehicles(internalOwner().id);
-  return `<div class="ph-row"><h2 style="margin:0">Sharing van</h2><form class="row" data-form="seatDate"><label class="sr" for="sv-date">Date</label><input class="input" id="sv-date" type="date" name="date" value="${esc(date)}" style="width:auto"><button class="btn btn-ghost">Show</button>
-    <a class="btn btn-ghost" href="#/admin/shared-trips?tab=van&date=${addDays(date, -1)}">Previous day</a><a class="btn btn-ghost" href="#/admin/shared-trips?tab=van&date=${addDays(date, 1)}">Next day</a></form></div>
-  <p class="muted">${fmtDay(date)} ${date.slice(0, 4)} · ${rs(S.settings.seatPrice)} per seat</p>
-  <div class="stack-lg">${sch.map(s => {
-    const v = vehicleById(s.vehicleId), taken = seatTakenMap(s.id, date), list = S.seatBookings.filter(b => b.scheduleId === s.id && b.date === date).sort((a, b) => a.code.localeCompare(b.code));
-    const adding = UI.seatAdd && UI.seatAdd.scheduleId === s.id && UI.seatAdd.date === date;
-    return `<div class="card"><div class="card-h"><div><h3>${esc(s.fromTown)} to ${esc(s.toTown)} · ${fmtTime(s.time)}</h3><div class="small muted">${esc(v?.regNo)} · ${esc(v?.model)} · ${Object.keys(taken).length} / ${seatCount(s)} booked</div></div>
-      <button class="btn btn-sm ${adding ? 'btn-ghost' : ''}" data-act="seatAddToggle" data-id="${s.id}" data-date="${date}">${adding ? 'Close' : 'Add seat booking'}</button></div>
-      <div class="grid" style="grid-template-columns:280px minmax(0,1fr);align-items:start" class="svgrid">
-        <div>${seatMapHtml(s, date, adding ? UI.seatAdd.seats : [], { admin: true, readonly: !adding, act: 'adminPickSeat' })}</div>
-        <div>${adding ? seatAddForm(s, date) : ''}${list.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Code</th><th>Passenger</th><th>Seats</th><th>Get on / off</th><th class="right">Total</th><th>Status</th><th></th></tr></thead><tbody>
-          ${list.map(b => `<tr class="${b.status === 'CANCELLED' ? 'past' : ''}"><td><b>${esc(b.code)}</b><br><span class="small muted">${SOURCE_LABEL[b.source]}</span></td><td>${esc(b.contactName)}<br><span class="small muted">${esc(showPhone(b.contactPhone))}</span></td><td class="num">${b.seats.join(', ')}</td><td>${esc(b.pickupTown)} to ${esc(b.dropTown)}</td>
-          <td class="right num">${rs(b.total)}<br><span class="small" style="color:${b.advancePaidAt ? 'var(--muted)' : 'var(--amber)'}">${b.advancePaidAt ? 'Advance paid' : 'Advance due'}</span></td><td>${pill(b.status)}</td>
-          <td><div class="row wrapx" style="gap:6px">${b.status === 'NEW' ? `<button class="btn btn-sm" data-act="seatStatus" data-id="${b.id}" data-to="CONFIRMED">Confirm</button>` : ''}${b.status === 'CONFIRMED' ? `<button class="btn btn-sm" data-act="seatStatus" data-id="${b.id}" data-to="COMPLETED">Complete</button>` : ''}
-            ${!b.advancePaidAt && b.status !== 'CANCELLED' ? `<button class="btn btn-ghost btn-sm" data-act="seatAdvance" data-id="${b.id}">Advance received</button>` : ''}
-            ${b.status !== 'CANCELLED' ? `<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(b.contactWhatsapp || b.contactPhone, eticketText(b))}">E-ticket</a>` : ''}
-            ${['NEW', 'CONFIRMED'].includes(b.status) ? `<button class="btn btn-danger btn-sm" data-act="seatCancel" data-id="${b.id}">Cancel</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No seat bookings for this departure.</div>'}</div></div></div>`;
-  }).join('') || '<div class="card empty">No active departures. Add one below.</div>'}
-  <div class="card"><h3>Departures</h3><p class="small muted">Sharing van departures. The vehicle is usually own fleet.</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Route</th><th>Time</th><th>Vehicle</th><th>Active</th><th></th></tr></thead><tbody>
-    ${S.schedules.map(s => `<tr><td>${esc(s.fromTown)} to ${esc(s.toTown)}</td><td><input class="input" type="time" value="${s.time}" data-live="schEdit" data-id="${s.id}" data-k="time" style="width:auto" aria-label="Departure time"></td>
-      <td><select class="input" data-live="schEdit" data-id="${s.id}" data-k="vehicleId" style="width:auto" aria-label="Vehicle">${fleetVeh.map(v => opt(v.id, `${v.regNo} (${v.seats} seats)`, s.vehicleId)).join('')}</select></td>
-      <td><label class="check" style="padding:0"><input type="checkbox" ${s.active ? 'checked' : ''} data-live="schEdit" data-id="${s.id}" data-k="active"> <span>Active</span></label></td><td></td></tr>`).join('')}</tbody></table></div>
-    <form class="row wrapx" data-form="addSchedule" style="margin-top:14px;align-items:flex-end">${field('From', `<select class="input" name="fromTown">${seatTowns().map(t => opt(t, t, 'Akkaraipattu')).join('')}</select>`)}${field('To', `<select class="input" name="toTown">${seatTowns().map(t => opt(t, t, 'Colombo')).join('')}</select>`)}
-      ${field('Time', `<input class="input" type="time" name="time" value="21:00">`)}${field('Vehicle', `<select class="input" name="vehicleId">${fleetVeh.map(v => opt(v.id, v.regNo)).join('')}</select>`)}<button class="btn btn-ghost" style="margin-bottom:2px">Add departure</button></form></div></div>
-  <style>@media(max-width:1000px){.card .grid[style*="280px"]{grid-template-columns:1fr!important}}</style>`;
-}
-function seatAddForm(s, date) {
-  const st = UI.seatAdd, towns = seatTowns(), price = st.price ?? S.settings.seatPrice;
-  return `<form class="card flat stack" data-form="adminSeat" style="margin-bottom:14px;background:#fbfcfa"><h4>New seat booking</h4>
-    <div class="small" id="seat-add-sum">${seatAddSummary()}</div>
-    ${field('Price per seat (Rs.)', `<input class="input" type="number" min="1" step="1" name="price" value="${price}" data-live="seatAddPrice" style="max-width:180px">`, price !== S.settings.seatPrice ? `Normal price is ${rs(S.settings.seatPrice)}. This booking only.` : 'Change it for this booking only, for example a discount.')}
-    <div class="grid g2">${field('Phone', `<input class="input" type="tel" name="phone" required>`)}${field('Name', `<input class="input" name="name" required>`)}
-      ${field('Get on at', `<select class="input" name="on">${towns.map(t => opt(t, t, s.fromTown)).join('')}</select>`)}${field('Get off at', `<select class="input" name="off">${towns.map(t => opt(t, t, s.toTown)).join('')}</select>`)}
-      ${field('Booked by', `<select class="input" name="source">${opt('PHONE', 'Phone')}${opt('WHATSAPP', 'WhatsApp')}${opt('WALK_IN', 'Walk-in')}</select>`)}<div><label class="check" style="margin-top:22px"><input type="checkbox" name="advPaid"> <span>Advance received</span></label></div></div>
-    <div><button class="btn btn-sm" ${st.seats.length ? '' : 'disabled'}>Save seat booking</button></div></form>`;
-}
-function seatAddSummary() {
-  const st = UI.seatAdd, price = st.price ?? S.settings.seatPrice;
-  return st.seats.length ? `Seats ${st.seats.join(', ')} · ${st.seats.length} × ${rs(price)} = <b>${rs(st.seats.length * price)}</b>` : 'Pick seats on the map.';
-}
-LIVE.seatAddPrice = el => { const n = parseInt(el.value, 10); UI.seatAdd.price = Number.isInteger(n) && n > 0 ? n : null; const s = $('#seat-add-sum'); if (s) s.innerHTML = seatAddSummary(); };
-FORM.seatDate = (f, d) => { UI.seatAdd = null; go('admin/shared-trips?tab=van&date=' + d.date); };
-ACT.seatAddToggle = el => { const cur = UI.seatAdd; UI.seatAdd = cur && cur.scheduleId === el.dataset.id && cur.date === el.dataset.date ? null : { scheduleId: el.dataset.id, date: el.dataset.date, seats: [] }; rerender(); };
-ACT.adminPickSeat = el => { const s = UI.seatAdd.seats, n = +el.dataset.seat, i = s.indexOf(n); i >= 0 ? s.splice(i, 1) : s.push(n); s.sort((a, b) => a - b); rerender(); };
-FORM.adminSeat = (f, d) => {
-  const st = UI.seatAdd, phone = normPhone(d.phone);
-  if (!st || !st.seats.length) return toast('Pick at least one seat.', 'error');
-  if (!d.name || !phoneOk(phone)) return toast('Please enter the name and a valid phone number.', 'error');
-  if (d.on === d.off) return toast('Get on and get off must be different.', 'error');
-  const taken = seatTakenMap(st.scheduleId, st.date);
-  if (st.seats.some(n => taken[n])) { st.seats = st.seats.filter(n => !taken[n]); rerender(); return toast('Sorry, one of the seats was just taken. Please pick again.', 'error'); }
-  const price = parseInt(d.price, 10);
-  if (!Number.isInteger(price) || price <= 0) return toast('Price per seat must be more than 0.', 'error');
-  const c = upsertCustomer({ name: d.name, phone, wa: phone }), total = st.seats.length * price;
-  const sb = { id: uid(), code: nextCode('seat'), token: randToken(), kind: 'SEAT', scheduleId: st.scheduleId, date: st.date, customerId: c.id, contactName: d.name, contactPhone: phone, contactWhatsapp: phone, pickupTown: d.on, dropTown: d.off,
-    seats: [...st.seats], seatsWanted: st.seats.length, tripId: null, bigBags: st.seats.length, smallBags: st.seats.length, pricePerSeat: price, total, advance: advanceFor(total), advanceMethod: 'BANK_TRANSFER', advancePaidAt: d.advPaid ? new Date().toISOString() : null, status: 'CONFIRMED', source: d.source, notes: '', createdAt: new Date().toISOString() };
-  S.seatBookings.push(sb); audit('seat.adminCreate', 'seat', sb.id, `${sb.code} added by admin${price !== S.settings.seatPrice ? ` at ${rs(price)} per seat (normal ${rs(S.settings.seatPrice)})` : ''}.`); UI.seatAdd = null; save(); rerender();
-  toast(`${sb.code} saved.`, '', { href: waLink(phone, eticketText(sb)), text: 'Send e-ticket' });
-};
+/* ---------- seat booking actions (shared airport seats, bus seats) ---------- */
 ACT.seatStatus = el => { const b = S.seatBookings.find(x => x.id === el.dataset.id); b.status = el.dataset.to; audit('seat.status', 'seat', b.id, `${b.code} ${STATUS_LABEL[b.status].toLowerCase()}.`); save(); rerender(); };
 ACT.seatAdvance = el => { const b = S.seatBookings.find(x => x.id === el.dataset.id); b.advancePaidAt = new Date().toISOString(); audit('seat.advance', 'seat', b.id, `${b.code} advance received.`); save(); toast('Advance marked received.'); rerender(); };
 ACT.seatCancel = async el => {
@@ -2532,18 +2375,6 @@ ACT.seatCancel = async el => {
   await cancelWithOutcome(b, 'seat');
   if (t && b.status === 'CANCELLED') { b.tripId = t.id; syncTrip(t); if (t.assignment) recomputeAssignment(t); save(); rerender(); }
 };
-LIVE.schEdit = el => {
-  const s = scheduleById(el.dataset.id), k = el.dataset.k;
-  if (k === 'vehicleId' && vehicleById(el.value)?.ownerId !== internalOwner().id) return toast('Sharing vans must be own fleet.', 'error');
-  s[k] = k === 'active' ? el.checked : el.value; audit('schedule.update', 'schedule', s.id, `Departure ${s.fromTown} to ${s.toTown} updated.`); save(); toast('Departure saved.');
-  if (k !== 'time') rerender();
-};
-FORM.addSchedule = (f, d) => {
-  if (d.fromTown === d.toTown) return toast('From and To must be different.', 'error');
-  if (!d.time) return toast('Please set a time.', 'error');
-  S.schedules.push({ id: uid(), fromTown: d.fromTown, toTown: d.toTown, time: d.time, vehicleId: d.vehicleId, active: true }); save(); toast('Departure added.'); rerender();
-};
-
 /* ---------- owners ---------- */
 function aOwners() {
   const exp = R.q.filter === 'expiry';
@@ -2775,7 +2606,7 @@ ACT.msgClearSel = () => { const st = msgState(); st.sel = []; st.sent = {}; rere
 ACT.msgTpl = el => {
   const c = S.settings.company;
   msgState().text = el.dataset.t === 'offer'
-    ? `Hello {name}, GoEasy Travels has seats on the sharing van between Akkaraipattu and Colombo every day. ${rs(S.settings.seatPrice)} per seat. Book here: ${appUrl('')} or reply to this message.`
+    ? `Hello {name}, coming home soon? GoEasy Travels has shared airport seats from BIA to the East Coast, and we book bus seats between Colombo and Akkaraipattu. Book here: ${appUrl('')} or reply to this message.`
     : `Hello {name}, thank you for travelling with GoEasy Travels. We hope to see you again. Call ${c.phone} or WhatsApp ${c.whatsapp} for your next trip.`;
   rerender();
 };
@@ -2835,7 +2666,7 @@ function reportBuild(type) {
   const rows = [
     ['Airport pickup & drop', t.filter(b => b.kind === 'AIRPORT').length, sum(t.filter(b => b.kind === 'AIRPORT'), b => b.total)],
     ['Private vehicle hire', t.filter(b => b.kind === 'PRIVATE').length, sum(t.filter(b => b.kind === 'PRIVATE'), b => b.total)],
-    ...['SHARED_AIRPORT', 'SEAT', 'BUS'].map(k => [KIND_LABEL[k] + 's', s.filter(b => b.kind === k).length, sum(s.filter(b => b.kind === k), b => b.total)]),
+    ...['SHARED_AIRPORT', 'BUS'].map(k => [KIND_LABEL[k] + 's', s.filter(b => b.kind === k).length, sum(s.filter(b => b.kind === k), b => b.total)]),
     ...['WEBSITE', 'PHONE', 'WHATSAPP', 'WALK_IN'].map(src => [`Booked by: ${SOURCE_LABEL[src]}`, live.filter(b => b.source === src).length, sum(live.filter(b => b.source === src), b => b.total)]),
     ...['NEW', 'QUOTE_REQUESTED', 'CONFIRMED', 'ASSIGNED', 'COMPLETED', 'CANCELLED'].map(x => [`Status: ${STATUS_LABEL[x]}`, [...trips, ...seats].filter(b => b.status === x).length, sum([...trips, ...seats].filter(b => b.status === x), b => b.total)]),
   ];
@@ -2890,12 +2721,12 @@ function aPrices() {
   return `<div class="ph-row"><h1>Prices</h1></div><div class="stack-lg">
   ${S.settings.samplePrices ? `<div class="notice row between wrapx"><span><b>Sample prices.</b> These are example prices. Replace them with real prices before go-live.</span><button class="btn btn-ghost btn-sm" data-act="clearSample">These are real prices now</button></div>` : ''}
   <div class="card"><div class="card-h"><h3>Route prices</h3><span class="small muted">Prices work both ways (A to B = B to A). Empty = customer gets a quote.</span></div>
-  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>From</th><th>To</th><th class="right">Car</th><th class="right">Van</th><th class="right">KDH</th><th>Active</th></tr></thead><tbody>
-    ${S.prices.map(p => `<tr class="${p.active ? '' : 'past'}"><td>${esc(locName(p.fromId))}</td><td>${esc(locName(p.toId))}</td>${['car', 'van', 'kdh'].map(k => `<td class="right"><input class="input num" style="width:110px;text-align:right" type="number" min="0" step="100" value="${p[k] ?? ''}" data-live="priceEdit" data-id="${p.id}" data-k="${k}" aria-label="${k} price"></td>`).join('')}
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>From</th><th>To</th><th class="right">Car</th><th class="right">Van</th><th class="right">KDH</th><th class="right">Shared seat<br><span class="tiny muted">per person</span></th><th>Active</th></tr></thead><tbody>
+    ${S.prices.map(p => `<tr class="${p.active ? '' : 'past'}"><td>${esc(locName(p.fromId))}</td><td>${esc(locName(p.toId))}</td>${['car', 'van', 'kdh', 'seat'].map(k => `<td class="right"><input class="input num" style="width:110px;text-align:right" type="number" min="0" step="100" value="${p[k] ?? ''}" data-live="priceEdit" data-id="${p.id}" data-k="${k}" aria-label="${k === 'seat' ? 'shared seat' : k} price"></td>`).join('')}
       <td><label class="check" style="padding:0"><input type="checkbox" ${p.active ? 'checked' : ''} data-live="priceEdit" data-id="${p.id}" data-k="active"> <span>Active</span></label></td></tr>`).join('')}</tbody></table></div>
   <form class="row wrapx" data-form="addRoute" style="margin-top:14px;align-items:flex-end">${field('From', `<select class="input" name="fromId">${locs.map(l => opt(l.id, l.name)).join('')}</select>`)}${field('To', `<select class="input" name="toId">${locs.map(l => opt(l.id, l.name, 'loc-colombo')).join('')}</select>`)}
-    ${['car', 'van', 'kdh'].map(k => field(k === 'kdh' ? 'KDH' : k[0].toUpperCase() + k.slice(1), `<input class="input" type="number" min="0" step="100" name="${k}" style="width:110px">`)).join('')}<button class="btn btn-ghost" style="margin-bottom:2px">Add route</button></form></div>
-  <form class="card stack" data-form="moneySettings" style="max-width:560px"><h3>Advance and seat price</h3><div class="grid g2">${field('Advance (% of total)', `<input class="input" type="number" min="0" max="100" name="advancePercent" value="${S.settings.advancePercent}">`, 'Rounded to the nearest Rs. 100.')}${field('Sharing van price per seat (Rs.)', `<input class="input" type="number" min="1" name="seatPrice" value="${S.settings.seatPrice}">`)}</div><div><button class="btn">Save</button></div></form></div>`;
+    ${['car', 'van', 'kdh', 'seat'].map(k => field(k === 'kdh' ? 'KDH' : k === 'seat' ? 'Shared seat' : k[0].toUpperCase() + k.slice(1), `<input class="input" type="number" min="0" step="100" name="${k}" style="width:110px">`)).join('')}<button class="btn btn-ghost" style="margin-bottom:2px">Add route</button></form></div>
+  <form class="card stack" data-form="moneySettings" style="max-width:560px"><h3>Advance</h3><div class="grid g2">${field('Advance (% of total)', `<input class="input" type="number" min="0" max="100" name="advancePercent" value="${S.settings.advancePercent}">`, 'Rounded to the nearest Rs. 100.')}</div><p class="small muted" style="margin:0">Shared airport seat prices are in the Shared seat column above. Bus seat prices come from the bus company; you enter them on each bus booking.</p><div><button class="btn">Save</button></div></form></div>`;
 }
 ACT.clearSample = () => { S.settings.samplePrices = false; save(); rerender(); };
 LIVE.priceEdit = (el, e) => {
@@ -2908,13 +2739,12 @@ FORM.addRoute = (f, d) => {
   if (d.fromId === d.toId) return toast('From and To must be different.', 'error');
   if (findRoute(d.fromId, d.toId) || S.prices.some(p => (p.fromId === d.fromId && p.toId === d.toId) || (p.fromId === d.toId && p.toId === d.fromId))) return toast('This route already exists. Edit it in the table.', 'error');
   const n = k => d[k] ? parseInt(d[k], 10) : null;
-  S.prices.push({ id: uid(), fromId: d.fromId, toId: d.toId, car: n('car'), van: n('van'), kdh: n('kdh'), active: true }); save(); toast('Route added.'); rerender();
+  S.prices.push({ id: uid(), fromId: d.fromId, toId: d.toId, car: n('car'), van: n('van'), kdh: n('kdh'), seat: n('seat'), active: true }); save(); toast('Route added.'); rerender();
 };
 FORM.moneySettings = (f, d) => {
-  const a = parseInt(d.advancePercent, 10), s = parseInt(d.seatPrice, 10);
+  const a = parseInt(d.advancePercent, 10);
   if (!Number.isInteger(a) || a < 0 || a > 100) return toast('Advance must be between 0 and 100.', 'error');
-  if (!Number.isInteger(s) || s <= 0) return toast('Seat price must be more than 0.', 'error');
-  S.settings.advancePercent = a; S.settings.seatPrice = s; audit('settings.update', 'settings', '-', `Advance ${a}%, seat price ${rs(s)}.`); save(); toast('Saved. New bookings use these values.');
+  S.settings.advancePercent = a; audit('settings.update', 'settings', '-', `Advance ${a}%.`); save(); toast('Saved. New bookings use these values.');
 };
 
 /* ---------- settings ---------- */
@@ -2925,12 +2755,12 @@ function aSettings() {
     ${field('Bank details shown to customers', `<textarea class="input" name="bankDetails" rows="5">${esc(S.settings.bankDetails)}</textarea>`, 'Placeholder until the client gives the real account.')}
     ${field('Clash window (minutes)', `<input class="input" type="number" min="0" max="1440" name="clashWindow" value="${S.settings.clashWindow}" style="max-width:200px">`, 'Trips closer than this on the same vehicle are blocked.')}
     <div><button class="btn">Save</button></div></form>
-  <div class="card"><h3>Locations</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Order</th><th>Name</th><th>Sharing van stop</th><th>Active</th></tr></thead><tbody>
+  <div class="card"><h3>Locations</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Order</th><th>Name</th><th>Bus stop</th><th>Active</th></tr></thead><tbody>
     ${locs.map((l, i) => `<tr class="${l.active ? '' : 'past'}"><td><div class="row" style="gap:4px"><button class="btn btn-ghost btn-sm" data-act="locMove" data-id="${l.id}" data-d="-1" ${i ? '' : 'disabled'} aria-label="Move up">Up</button><button class="btn btn-ghost btn-sm" data-act="locMove" data-id="${l.id}" data-d="1" ${i < locs.length - 1 ? '' : 'disabled'} aria-label="Move down">Down</button></div></td>
       <td><input class="input" value="${esc(l.name)}" data-live="locEdit" data-id="${l.id}" data-k="name" aria-label="Location name">${l.isAirport ? '<span class="small muted">Airport</span>' : ''}</td>
-      <td><label class="check" style="padding:0"><input type="checkbox" ${l.isSeatTown ? 'checked' : ''} data-live="locEdit" data-id="${l.id}" data-k="isSeatTown"> <span>Stop</span></label></td>
+      <td><label class="check" style="padding:0"><input type="checkbox" ${l.isBusStop ? 'checked' : ''} data-live="locEdit" data-id="${l.id}" data-k="isBusStop"> <span>Stop</span></label></td>
       <td>${l.isAirport ? '<span class="small muted">Always</span>' : `<label class="check" style="padding:0"><input type="checkbox" ${l.active ? 'checked' : ''} data-live="locEdit" data-id="${l.id}" data-k="active"> <span>Active</span></label>`}</td></tr>`).join('')}</tbody></table></div>
-    <form class="row wrapx" data-form="addLocation" style="margin-top:14px;align-items:flex-end">${field('New location', `<input class="input" name="name" required>`)}<label class="check"><input type="checkbox" name="isSeatTown"> <span>Sharing van stop</span></label><button class="btn btn-ghost" style="margin-bottom:2px">Add</button></form></div>
+    <form class="row wrapx" data-form="addLocation" style="margin-top:14px;align-items:flex-end">${field('New location', `<input class="input" name="name" required>`)}<label class="check"><input type="checkbox" name="isBusStop"> <span>Bus stop</span></label><button class="btn btn-ghost" style="margin-bottom:2px">Add</button></form></div>
   ${rulesSettingsHtml()}
   <form class="card stack" data-form="changePassword"><h3>Admin password</h3><div class="grid g2">${field('Current password', `<input class="input" name="old" type="password" required>`)}<div></div>${field('New password', `<input class="input" name="password" type="password" minlength="8" required>`)}${field('Confirm new password', `<input class="input" name="password2" type="password" required>`)}</div><div><button class="btn btn-ghost">Change password</button></div></form>
   <div class="card"><h3>About this prototype</h3><p class="small muted">Money and clash rules follow the project specification. Self-checks run in the browser console on load. <button class="link" data-act="runChecks">Run checks now</button></p><div id="checks"></div></div></div>`;
@@ -2942,14 +2772,14 @@ FORM.companySettings = (f, d) => {
 };
 LIVE.locEdit = (el, e) => {
   if (e.type !== 'change') return; const l = loc(el.dataset.id), k = el.dataset.k;
-  if (k === 'name') { const n = el.value.trim(); if (!n) return toast('Name cannot be empty.', 'error'); if (S.locations.some(x => x.name.toLowerCase() === n.toLowerCase() && x.id !== l.id)) return toast('This name is already used.', 'error'); const old = l.name; l.name = n; S.schedules.forEach(s => { if (s.fromTown === old) s.fromTown = n; if (s.toTown === old) s.toTown = n; }); }
+  if (k === 'name') { const n = el.value.trim(); if (!n) return toast('Name cannot be empty.', 'error'); if (S.locations.some(x => x.name.toLowerCase() === n.toLowerCase() && x.id !== l.id)) return toast('This name is already used.', 'error'); const old = l.name; l.name = n; }
   else l[k] = el.checked;
   save(); toast('Location saved.'); if (k !== 'name') rerender();
 };
 ACT.locMove = el => { const locs = [...S.locations].sort((a, b) => a.sortOrder - b.sortOrder), i = locs.findIndex(l => l.id === el.dataset.id), j = i + +el.dataset.d; [locs[i], locs[j]] = [locs[j], locs[i]]; locs.forEach((l, k) => l.sortOrder = k); save(); rerender(); };
 FORM.addLocation = (f, d) => {
   if (!d.name) return toast('Please type a name.', 'error'); if (S.locations.some(l => l.name.toLowerCase() === d.name.toLowerCase())) return toast('This location already exists.', 'error');
-  S.locations.push({ id: uid(), name: d.name, isAirport: false, isSeatTown: !!d.isSeatTown, sortOrder: S.locations.length, active: true }); save(); toast('Location added.'); rerender();
+  S.locations.push({ id: uid(), name: d.name, isAirport: false, isBusStop: !!d.isBusStop, sortOrder: S.locations.length, active: true }); save(); toast('Location added.'); rerender();
 };
 ACT.runChecks = () => { const r = selfTest(); $('#checks').innerHTML = `<ul class="hist">${r.map(([ok, n]) => `<li style="color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? 'Pass' : 'FAIL'}: ${esc(n)}</li>`).join('')}</ul>`; };
 </script>
@@ -2974,13 +2804,12 @@ function departureText(b) { // tell a passenger their shared departure
 }
 function seatTabs(tab) {
   const n = k => S.seatBookings.filter(b => b.kind === k && b.status === 'NEW' && (k !== 'SHARED_AIRPORT' || !b.tripId)).length;
-  return `<div class="chips" style="margin-bottom:16px">${[['airport', 'Airport shared seats', n('SHARED_AIRPORT')], ['van', 'Sharing van', n('SEAT')], ['bus', 'Bus seats', n('BUS')]].map(([k, l, c]) => `<a class="chip ${tab === k ? 'on' : ''}" href="#/admin/shared-trips?tab=${k}">${l}${c ? ` <span class="c">${c}</span>` : ''}</a>`).join('')}</div>`;
+  return `<div class="chips" style="margin-bottom:16px">${[['airport', 'Shared airport seats', n('SHARED_AIRPORT')], ['bus', 'Bus seats', n('BUS')]].map(([k, l, c]) => `<a class="chip ${tab === k ? 'on' : ''}" href="#/admin/shared-trips?tab=${k}">${l}${c ? ` <span class="c">${c}</span>` : ''}</a>`).join('')}</div>`;
 }
 function aSharingVan() {
   const tab = R.q.tab || 'airport';
-  if (tab === 'van') return `<div class="ph-row"><h1>Shared seats and trips</h1></div>${seatTabs(tab)}${vanSection()}`;
-  if (tab === 'bus') return `<div class="ph-row"><h1>Shared seats and trips</h1></div>${seatTabs(tab)}${busSection()}`;
-  return `<div class="ph-row"><h1>Shared seats and trips</h1></div>${seatTabs(tab)}${airportSection()}`;
+  if (tab === 'bus') return `<div class="ph-row"><h1>Bus seats</h1></div>${seatTabs(tab)}${busSection()}`;
+  return `<div class="ph-row"><h1>Shared airport seats</h1></div>${seatTabs(tab)}${airportSection()}`;
 }
 function airportSection() {
   const now = nowLocal(), r = R_();
@@ -3053,7 +2882,7 @@ function aTrip(id) {
   syncTrip(t);
   const list = S.seatBookings.filter(b => b.tripId === t.id).sort((a, b) => a.code.localeCompare(b.code)), done = t.status === 'COMPLETED', canc = t.status === 'CANCELLED';
   const going = t.dir === 'GOING';
-  return { html: `<div class="ph-row"><div><a href="#/admin/shared-trips" class="small">Shared seats and trips</a><h1>${esc(t.code)} ${pill(t.status)}</h1><div class="muted small">${t.dir === 'ARRIVING' ? 'Shared airport pickup' : 'Shared airport drop'} · ${fmtDay(t.date)} ${t.date.slice(0, 4)}</div></div>
+  return { html: `<div class="ph-row"><div><a href="#/admin/shared-trips" class="small">Shared airport seats</a><h1>${esc(t.code)} ${pill(t.status)}</h1><div class="muted small">${t.dir === 'ARRIVING' ? 'Shared airport pickup' : 'Shared airport drop'} · ${fmtDay(t.date)} ${t.date.slice(0, 4)}</div></div>
     <div class="row wrapx">${t.assignment ? `<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(t.assignment.driverPhone || ownerById(t.assignment.ownerId).whatsapp || ownerById(t.assignment.ownerId).mobile, tripText(t))}">${IC.wa} Trip details to ${t.assignment.driverPhone ? 'driver' : 'owner'}</a>` : ''}
       ${t.status === 'ASSIGNED' ? `<button class="btn btn-sm" data-act="completeTrip" data-id="${t.id}">Mark trip completed</button>` : ''}</div></div>
   <div class="grid g2" style="align-items:start"><div class="stack-lg">
@@ -3117,9 +2946,9 @@ function completeTrip(t) {
 }
 function busSection() {
   const list = S.seatBookings.filter(b => b.kind === 'BUS').sort((a, b) => (b.status === 'NEW') - (a.status === 'NEW') || a.date.localeCompare(b.date));
-  return `<div class="stack-lg"><div class="infobox small">Buses are not ours. Book the seats with the bus operator, then enter the bus, time, seat numbers and price here and confirm. Customers do not pick bus seats.</div>
+  return `<div class="stack-lg">
   ${list.map(b => `<form class="card stack" data-form="busConfirm" data-id="${b.id}"><div class="row between wrapx"><div><b>${esc(b.code)}</b> ${pill(b.status)}<br><span class="small muted">${esc(b.contactName)} · ${esc(showPhone(b.contactPhone))}</span></div>
-      <div class="right"><b>${esc(b.pickupTown)} to ${esc(b.dropTown)}</b><br><span class="small">${fmtDay(b.date)} · ${b.seatsWanted} seat(s) · ${bagText(b)}</span></div></div>
+      <div class="right"><b>${esc(b.pickupTown)} to ${esc(b.dropTown)}</b><br><span class="small">${fmtDay(b.date)}${b.prefTime ? ' · wants ' + BUS_TIME[b.prefTime].toLowerCase() : ''} · ${b.seatsWanted} seat(s) · ${bagText(b)}</span></div></div>
     ${b.notes ? `<div class="small muted">Notes: ${esc(b.notes)}</div>` : ''}
     ${b.status === 'NEW' ? `<div class="grid g3">${field('Bus operator', `<input class="input" name="operator" required>`)}${field('Bus number', `<input class="input" name="number" required>`)}${field('Departure time', `<input class="input" type="time" name="time" required>`)}
       ${field('Seat numbers', `<input class="input" name="seats" placeholder="21, 22" required>`)}${field('Price per seat (Rs.)', `<input class="input" type="number" min="1" name="price" required>`)}</div>
@@ -3274,7 +3103,7 @@ function finOverview() {
     ${tile('Collected by owners and drivers', rs(sum(done, x => x.assignment.ownerCollects)), 'Completed trips')}
     ${tile('Commission earned', rs(sum(ext, x => x.assignment.commission)), 'From partner trips')}
     ${tile('Margin', rs(sum(ext, x => x.total - x.assignment.hire)), 'Fare above the hire amount')}
-    ${tile('Own fleet income', rs(sum(own, x => x.total) + sum(S.seatBookings.filter(b => b.kind === 'SEAT' && b.status === 'COMPLETED' && inR(b.date)), b => b.total)), 'Own trips and sharing van')}
+    ${tile('Own fleet income', rs(sum(own, x => x.total)), 'Trips done by own vehicles')}
     ${tile('Cancellation fees kept', rs(fees))}
     ${tile('Refunds paid', rs(refunds))}
     ${tile('GoEasy earnings', rs(earningsBetween(from, to)), 'Commission + margin + own fleet + fees')}
@@ -3365,7 +3194,7 @@ function selfTest() {
     S = JSON.parse(JSON.stringify(real)); S.settings.clashWindow = 120;
     const v = S.vehicles.find(x => x.id === 'v-pd3320') || S.vehicles.find(x => !ownerById(x.ownerId)?.isInternal && x.approval === 'APPROVED');
     if (v) {
-      const o = ownerById(v.ownerId); o.approval = 'APPROVED'; o.status = 'ACTIVE'; v.availability = 'AVAILABLE'; S.schedules = S.schedules.filter(s => s.vehicleId !== v.id);
+      const o = ownerById(v.ownerId); o.approval = 'APPROVED'; o.status = 'ACTIVE'; v.availability = 'AVAILABLE';
       S.bookings = [{ id: 'a', code: 'T-1', status: 'ASSIGNED', pickupAt: '2030-01-10T10:00', assignment: { ownerId: o.id, vehicleId: v.id } }];
       eq('Clash: 119 minutes blocks', clashCheck({ bookingId: 'x', ownerId: o.id, vehicleId: v.id, pickupAt: '2030-01-10T11:59' }).blocks.length, 1);
       eq('Clash: 120 minutes is fine', clashCheck({ bookingId: 'x', ownerId: o.id, vehicleId: v.id, pickupAt: '2030-01-10T12:00' }).blocks.length, 0);
