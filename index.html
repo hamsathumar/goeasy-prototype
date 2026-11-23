@@ -36,7 +36,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stack>*+*{margin-top:12px} .stack-lg>*+*{margin-top:20px}
 .grid{display:grid;gap:16px}
 .g2{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:repeat(3,minmax(0,1fr))} .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
-@media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}.g4.keep2,.g3.keep2{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}.g4.keep2,.g3.keep2,.g2.keep2{grid-template-columns:1fr 1fr}}
 .hide{display:none!important}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
@@ -150,7 +150,53 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .steps{display:flex;gap:6px;margin-bottom:16px}
 .steps span{flex:1;height:4px;border-radius:4px;background:var(--line)}
 .steps span.on{background:var(--gold)}
-.wtabs5{display:flex!important;overflow-x:auto;scrollbar-width:none}.wtabs5::-webkit-scrollbar{display:none}.wtabs5 button{flex:1 0 auto;white-space:nowrap;padding-left:14px;padding-right:14px}
+/* UX rework: clearer widget, steppers, inline errors, grouped fields */
+.wtabs button small,.seg button small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:2px}
+.wtabs button.on small{color:var(--green-mid)}
+.wtabs button{line-height:1.2}
+.steplbl{font-size:13px;color:var(--muted);margin:-8px 0 14px}.steplbl b{color:var(--ink)}
+.seg2 button{min-height:54px;line-height:1.2}
+.wh{margin:6px 0 0;font-size:16px}
+.wgroup{border:1px solid var(--line);border-radius:12px;padding:6px 14px 10px;margin:0;display:flex;flex-direction:column;gap:2px}
+.wgroup legend{font-weight:700;font-size:14px;padding:0 6px;margin-left:-6px;color:var(--ink)}
+.wgroup>div:not(.stp),.wgroup>label{margin-top:8px}
+.stp{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;border-bottom:1px solid #eef1ed}
+.stp:last-child{border-bottom:0}
+.stp-l{font-weight:600;font-size:15px}.stp-l small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.stp-c{display:flex;align-items:center;gap:4px;flex:none}
+.stp-c button{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-size:22px;line-height:1;color:var(--green);cursor:pointer;display:grid;place-items:center}
+.stp-c button:hover:not([disabled]){border-color:var(--green)}
+.stp-c button[disabled]{opacity:.35;cursor:not-allowed}
+.stp-c output{min-width:30px;text-align:center;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.ferr{color:var(--red);font-size:13.5px;font-weight:600;margin-top:6px}
+.input[aria-invalid="true"]{border-color:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
+.cls.off{cursor:default;background:#fafbf9;border-style:dashed}
+.cls.off .pr{color:var(--muted)}
+.wmore{border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.wmore summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600;font-size:14px}
+.wmore[open]{padding-bottom:12px}.wmore[open] summary{margin-bottom:4px}
+.wmore>div{margin-top:8px}
+.pub-nav a,.pub-nav-m a,.pub-nav-m button{text-decoration:none;color:var(--ink);font-weight:500;padding:10px 12px;border-radius:8px;min-height:44px;display:inline-flex;align-items:center;background:none;border:0;cursor:pointer;font-size:15px;white-space:nowrap}
+.pub-nav a:hover{background:var(--bg)}
+.pub-nav .on,.pub-nav-m .on{color:var(--green);box-shadow:inset 0 -3px 0 var(--gold)}
+.pub-nav-m{display:none}
+@media(max-width:900px){.pub-nav-m{display:flex;overflow-x:auto;gap:2px;padding:0 8px;border-top:1px solid var(--line);scrollbar-width:none}.pub-nav-m::-webkit-scrollbar{display:none}}
+.more{display:flex;gap:16px;align-items:flex-start;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}
+.more:hover{border-color:var(--green);transform:translateY(-2px)}
+.more .ic{width:52px;height:52px;border-radius:12px;background:var(--gold-light);display:grid;place-items:center;color:var(--green);flex:none}
+.more h3{margin:0 0 4px}.more p{margin:0 0 8px}
+.soon{display:inline-flex;align-items:center;min-height:32px;padding:4px 12px;border-radius:999px;border:1px dashed var(--line);font-size:13px;color:var(--muted)}
+.hero-sm .wrap{padding-bottom:48px}
+.howto{margin:16px 0 0;padding-left:22px;color:#eaf2ed}.howto li{margin-bottom:8px}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.timeline li{display:flex;gap:12px;align-items:center;min-height:40px;color:var(--muted)}
+.timeline .dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;background:#fff}
+.timeline li.done{color:var(--ink)}.timeline li.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+.timeline li.cur{color:var(--ink);font-weight:600}.timeline li.cur .dot{border-color:var(--gold);background:var(--gold-light);color:var(--green)}
+@media(max-width:980px){.hero .hero-copy .ticks{display:none}.hero .lead{margin-bottom:0}}
+@media(max-width:520px){.hero h1{font-size:27px;line-height:1.15}.hero .lead{font-size:15.5px}.hero .wrap{gap:18px}.wbody{padding:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
 .svc-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.svc-big{grid-column:1/-1;background:linear-gradient(120deg,#fff 55%,var(--gold-light,#f7e6b0))}
 .g3.keep3{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:#f1f4f0;border-radius:10px;padding:4px;gap:4px}
@@ -256,6 +302,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .side a.nav:hover{background:rgba(255,255,255,.07)}
 .side a.nav.on{background:var(--green-mid);color:#fff}
 .side .badge{background:var(--gold);color:var(--green-dark);font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;min-width:22px;text-align:center}
+.side .navh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8fb0a0;padding:14px 12px 4px} .help{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:0 14px;margin:-6px 0 18px} .help summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);list-style:none} .help summary::-webkit-details-marker{display:none} .help summary::after{content:'How it works';margin-left:auto;font-size:12.5px;font-weight:600;color:var(--green);white-space:nowrap} .help[open] summary::after{content:'Hide'} .help ol{margin:0 0 12px;padding-left:22px;font-size:14px;color:var(--muted)}.help li{margin-bottom:4px} .nextbox{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;background:var(--gold-light);border-radius:10px;padding:12px 14px;color:#5a4a16} .nextbox b{color:var(--green-dark)} 
 .side .me{margin-top:auto;border-top:1px solid rgba(255,255,255,.12);padding:14px 8px 0;font-size:13px}
 .main{padding:24px 28px 60px;min-width:0}
 .ph-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
@@ -263,7 +310,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 @media(max-width:900px){
   .admin{grid-template-columns:1fr}
   .side{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:8px;gap:2px}
-  .side .brand,.side .me{display:none}
+  .side .brand,.side .me,.side .navh{display:none}
   .side a.nav{white-space:nowrap;flex:none}
   .main{padding:18px 16px 60px}
 }
@@ -975,11 +1022,12 @@ ACT.print = () => window.print();
    PUBLIC WEBSITE
    ===================================================================== */
 function freshWidget() {
-  const d1 = addDays(today(), 1);
+  const d1 = addDays(today(), 3); // far enough ahead that every option (incl. shared seats) is open
   return { tab: 'AIRPORT', step: 1, dir: 'ARRIVING', town: 'loc-akkaraipattu', from: '', to: '', date: d1, time: '06:00', flightNo: '', flightTime: '05:45', pickup: '',
     adults: 2, children: 0, childSeats: 0, bigBags: 2, smallBags: 2, special: '', mode: null, cls: null,
     name: '', phone: '', hasWa: true, wa: '', country: 'Sri Lanka', email: '', notes: '', forOther: false, tName: '', tPhone: '', optIn: false, err: '',
     shared: 'VAN',
+    errField: '',
     seat: { route: 'Akkaraipattu|Colombo', date: today(), scheduleId: null, on: 'Akkaraipattu', off: 'Colombo', seats: [] },
     bus: { from: 'loc-colombo', to: 'loc-kalmunai', date: d1, seats: 2 },
     rent: { type: 'CAR', vehicleId: null, start: addDays(today(), 2), end: addDays(today(), 5), place: 'BIA Airport (delivery)', licence: 'SL' },
@@ -992,6 +1040,7 @@ function publicRoute() {
   if (!a) return { html: pubShell(homePage()) };
   if (a === 'booking' && b) return c === 'ticket' ? ticketPage(b) : c === 'quote' ? quotePage(b) : { html: pubShell(confirmPage(b)) };
   if (a === 'request' && b) return { html: pubShell(requestPage(b)) };
+  if (a === 'rentals' || a === 'air-tickets') return { html: pubShell(servicePage(a === 'rentals' ? 'RENTAL' : 'AIR')) };
   if (['terms', 'partner-terms', 'privacy'].includes(a)) return { html: pubShell(staticPage(a)) };
   return { html: pubShell(`<div class="wrap section"><h2>Page not found</h2><a class="btn" href="#/">Go to home</a></div>`) };
 }
@@ -999,8 +1048,9 @@ function pubShell(inner) {
   const c = S.settings.company;
   return `<header class="pub-head noprint"><div class="wrap">
     <a class="brand" href="#/">${LOGO()}<div><b>GoEasy Travels</b><span>by AMS Tours Lanka (Pvt) Ltd</span></div></a>
-    <nav class="pub-nav" aria-label="Main"><button data-act="wTab" data-tab="AIRPORT" data-scroll="1">Airport transfers</button><button data-act="scrollTo" data-id="services">Services</button><button data-act="scrollTo" data-id="partner">Partner with us</button><button data-act="scrollTo" data-id="contact">Contact</button></nav>
-    <a class="btn btn-ghost btn-sm" href="#/partner/login">Partner login</a></div></header>
+    <nav class="pub-nav" aria-label="Main">${pubNavLinks()}</nav>
+    <a class="btn btn-ghost btn-sm" href="#/partner/login">Partner login</a></div>
+    <nav class="pub-nav-m" aria-label="Main">${pubNavLinks()}</nav></header>
   <main>${inner}</main>
   <footer class="foot noprint" id="contact"><div class="wrap grid g3">
     <div><div class="brand" style="color:#fff">${LOGO('#06452e', '#d6ad50')}<div><b>GoEasy Travels</b><span style="color:#a9c0b3">by ${esc(c.name)}</span></div></div><p style="margin-top:12px">${esc(c.tagline)}</p><p class="small">Reg. no. ${esc(c.reg)}</p></div>
@@ -1009,38 +1059,52 @@ function pubShell(inner) {
     <div><h4>More</h4><p><a href="#/partner/register">Partner with us</a><br><a href="#/terms">Terms</a> · <a href="#/privacy">Privacy</a> · <a href="#/partner-terms">Partner terms</a></p><p class="small">${esc(c.website)}</p></div>
   </div></footer>`;
 }
+function pubNavLinks() {
+  const a = R.path[0] || '';
+  return `<button class="${!a && W.tab === 'AIRPORT' ? 'on' : ''}" data-act="wTab" data-tab="AIRPORT" data-scroll="1">Airport transfers</button><button class="${!a && W.tab === 'SHARED' ? 'on' : ''}" data-act="wTab" data-tab="SHARED" data-scroll="1">Van & bus seats</button>
+    <a href="#/rentals" class="${a === 'rentals' ? 'on' : ''}">Rentals</a><a href="#/air-tickets" class="${a === 'air-tickets' ? 'on' : ''}">Air tickets</a><button data-act="scrollTo" data-id="partner">Partner with us</button>`;
+}
 ACT.scrollTo = el => {
   if (R.path.length) { go(''); setTimeout(() => document.getElementById(el.dataset.id)?.scrollIntoView({ behavior: 'smooth' }), 50); return; }
   document.getElementById(el.dataset.id)?.scrollIntoView({ behavior: 'smooth' });
 };
 
 function homePage() {
-  const svc = (ic, t, d, tab, big) => `<div class="card svc ${big ? 'svc-big' : ''}"><div class="ic">${ic}</div><h3>${t}</h3><p class="muted">${d}</p><div><button class="btn btn-sm ${big ? 'btn-gold' : ''}" data-act="wTab" data-tab="${tab}" data-scroll="1">${tab === 'RENTAL' || tab === 'AIR' ? 'Send a request' : 'Book now'}</button></div></div>`;
+  const r = R_();
+  const more = (href, ic, t, d, cta) => `<a class="card more" href="${href}"><div class="ic">${ic}</div><div><h3>${t}</h3><p class="muted">${d}</p><span class="link">${cta} →</span></div></a>`;
   const soon = ['Rosa bus hire', 'Tour packages', 'Wedding transport'];
   return `<section class="hero" id="book"><div class="hero-scene">${HERO_SCENE}</div><div class="wrap">
-    <div style="padding-top:12px"><h1>Coming home or flying out? <em>We drive you from BIA to the East Coast.</em></h1>
-      <p class="lead">Private car or van, or a shared seat with other travellers on your flight time. Also private trips anywhere in Sri Lanka, sharing vans, bus seats, self-drive rentals and air tickets.</p>
-      <ul class="ticks"><li>${IC.tick}<span>We follow your flight. ${R_().freeWaitAir} minutes free waiting after you land.</span></li><li>${IC.tick}<span>Fixed prices on main routes. Pay a small advance only.</span></li><li>${IC.tick}<span>Book for your family from abroad. Help: ${esc(R_().supportHours)}</span></li></ul></div>
+    <div class="hero-copy"><h1>Coming home or flying out? <em>We drive you from BIA to the East Coast.</em></h1>
+      <p class="lead">Book a private car or van, or save with a shared seat. Fixed prices. We follow your flight.</p>
+      <ul class="ticks"><li>${IC.tick}<span>We wait ${r.freeWaitAir} minutes after your flight lands, free.</span></li><li>${IC.tick}<span>Pay a small advance only. The rest on the day.</span></li><li>${IC.tick}<span>Book for your family from abroad. Help: ${esc(r.supportHours)}</span></li></ul></div>
     <div class="widget" aria-label="Booking form">${widgetHtml()}</div>
   </div></section>
-  <section class="section" id="services"><div class="wrap"><h2>Our services</h2><p class="muted">Airport transfers are our main service. Everything else is one tap away.</p>
-    <div class="grid svc-grid" style="margin-top:20px">
-      ${svc(IC.plane, 'Airport transfers', 'Arriving in Sri Lanka or going to the airport. A private car, van or KDH, or a shared seat that leaves at a time set around your flight.', 'AIRPORT', true)}
-      ${svc(IC.car, 'Private trips', 'A private vehicle with driver from any town to any town in Sri Lanka.', 'PRIVATE')}
-      ${svc(IC.seat, 'Shared rides', 'Daily sharing van between Akkaraipattu and Colombo (pick your seat), or bus seats we book for you.', 'SHARED')}
-      ${svc(IC.car, 'Self-drive rentals', 'Cars and motorbikes by the day. Send a request and we call you to arrange it.', 'RENTAL')}
-      ${svc(IC.plane, 'Air tickets', 'Tell us where and when. We find fares and book through our licensed partner.', 'AIR')}</div>
-    <div class="chips" style="margin-top:20px">${soon.map(s => `<span class="soon" aria-disabled="true">${s}<small>Coming soon</small></span>`).join('')}</div></div></section>
-  <section class="section" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><div class="wrap"><h2>How it works</h2>
+  <section class="section" id="services"><div class="wrap"><h2>More from GoEasy</h2><p class="muted">Not an airport trip? We can still help.</p>
+    <div class="grid g2" style="margin-top:20px">
+      ${more('#/rentals', IC.car, 'Self-drive rentals', 'Cars and motorbikes by the day, without a driver. Send a request and we call you to arrange it.', 'Rent a car or bike')}
+      ${more('#/air-tickets', IC.plane, 'Air tickets', 'Tell us where and when you fly. We find fares and book through our licensed partner.', 'Ask for air tickets')}</div>
+    <div class="row wrapx" style="margin-top:14px;gap:8px"><span class="small muted">Coming soon:</span>${soon.map(x => `<span class="soon" aria-disabled="true">${x}</span>`).join('')}</div></div></section>
+  <section class="section" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><div class="wrap"><h2>How airport booking works</h2>
     <div class="grid g3" style="margin-top:20px">
-      <div class="stack"><div class="stepn">1</div><h3>Tell us your trip</h3><p class="muted">Your flight, town, people and bags. See the price straight away, or ask for a quote.</p></div>
-      <div class="stack"><div class="stepn">2</div><h3>Pay a small advance</h3><p class="muted">Pay ${S.settings.advancePercent}% by bank transfer to confirm. Pay the rest on the day. ${esc(R_().cancellationPolicy)}</p></div>
-      <div class="stack"><div class="stepn">3</div><h3>Get your e-ticket</h3><p class="muted">We send your driver's name, phone and vehicle number before the trip, and where to meet at the airport.</p></div>
+      <div class="stack"><div class="stepn">1</div><h3>Tell us your flight</h3><p class="muted">Your flight, your town, how many people and bags. You see the price straight away.</p></div>
+      <div class="stack"><div class="stepn">2</div><h3>Pay a small advance</h3><p class="muted">${S.settings.advancePercent}% by bank transfer confirms your ride. Pay the rest on the day. ${esc(r.cancellationPolicy)}</p></div>
+      <div class="stack"><div class="stepn">3</div><h3>Meet your driver</h3><p class="muted">Before your trip we send the driver's name, phone and vehicle number. At BIA the driver waits inside the arrival lobby with your name.</p></div>
     </div></div></section>
   <section class="section" id="partner"><div class="wrap"><div class="cta"><div><h2>Own a van or car? Earn with GoEasy.</h2><p style="color:#c4d3ca;max-width:560px;margin:0">Register your vehicle, get airport and private trips from us, and see your trips and earnings on your phone.</p></div>
     <a class="btn btn-gold" href="#/partner/register">Register as a partner</a></div></div></section>`;
 }
-
+function servicePage(tab) { // rentals and air tickets live on their own pages, not in the airport hero
+  if (W.tab !== tab) { W.tab = tab; W.step = 1; W.err = ''; W.errField = ''; }
+  const rental = tab === 'RENTAL';
+  const steps = rental ? ['Choose a car or motorbike and your dates.', 'We call or WhatsApp you to agree the price, deposit and documents.', 'Collect the vehicle and drive. No payment on this website.']
+    : ['Tell us your route, dates and travellers.', 'We find fares and send them to you on WhatsApp.', 'Reply to book. We issue the ticket through our licensed partner.'];
+  return `<section class="hero hero-sm"><div class="wrap">
+    <div class="hero-copy"><a href="#/" class="small" style="color:#cfe0d6">GoEasy Travels</a><h1>${rental ? 'Self-drive <em>rentals</em>' : 'Air <em>tickets</em>'}</h1>
+      <p class="lead">${rental ? 'Cars and motorbikes by the day, without a driver. Need a driver? Book a private trip instead.' : `Flights to and from Sri Lanka. Booked through ${esc(R_().airPartner)}.`}</p>
+      <ol class="howto">${steps.map(x => `<li>${x}</li>`).join('')}</ol>
+      ${rental ? '' : '<p class="small" style="color:#cfe0d6">We do not keep passport details on this website. We ask for them on WhatsApp when we book.</p>'}</div>
+    <div class="widget" aria-label="${rental ? 'Rental request' : 'Air ticket request'}">${widgetHtml(true)}</div></div></section>`;
+}
 /* ---------- booking widget (CLAUDE.md 10.1) ---------- */
 const activeLocs = () => S.locations.filter(l => l.active && l.bookable !== false).sort((a, b) => a.sortOrder - b.sortOrder);
 const seatTowns = () => S.locations.filter(l => l.active && l.isSeatTown).sort((a, b) => a.sortOrder - b.sortOrder).map(l => l.name);
@@ -1055,28 +1119,44 @@ function wWhen() { // the pickup date-time this booking will use
   if (W.dir === 'ARRIVING') return W.date + 'T' + W.flightTime;
   return W.pickup || suggestPickup(W.date + 'T' + W.flightTime, W.town);
 }
-function widgetSteps() {
-  if (W.tab === 'AIRPORT' || W.tab === 'PRIVATE') return 3;
-  return 2;
-}
-function widgetHtml() {
-  const tabs = [['AIRPORT', 'Airport'], ['PRIVATE', 'Private trip'], ['SHARED', 'Shared ride'], ['RENTAL', 'Rental'], ['AIR', 'Air ticket']];
-  const n = widgetSteps(), cur = Math.min(W.step, n);
+const STEP_NAMES = { AIRPORT: ['Your flight', 'Shared or private', 'Your details'], PRIVATE: ['Your trip', 'Choose a vehicle', 'Your details'], SHARED: ['Seats', 'Your details'], RENTAL: ['Vehicle and dates', 'Your details'], AIR: ['Your flight', 'Your details'] };
+const HERO_TABS = [['AIRPORT', 'Airport', 'To or from BIA'], ['PRIVATE', 'Private trip', 'Any town'], ['SHARED', 'Van & bus seats', 'Pay per seat']];
+function widgetHtml(fixed) { // fixed = the rental / air ticket pages (no tabs)
+  if (!fixed && !HERO_TABS.some(t => t[0] === W.tab)) { W.tab = 'AIRPORT'; W.step = 1; }
+  const names = STEP_NAMES[W.tab], n = names.length, cur = Math.min(W.step, n);
   let body;
   if (W.tab === 'AIRPORT' || W.tab === 'PRIVATE') body = W.step === 1 ? wTripStep() : W.step === 2 ? wChooseStep() : wDetailsStep();
   else if (W.tab === 'SHARED') body = W.step === 1 ? (W.shared === 'VAN' ? wSeatStep() : wBusStep()) : wDetailsStep();
   else if (W.tab === 'RENTAL') body = W.step === 1 ? wRentStep() : wDetailsStep();
   else body = W.step === 1 ? wAirStep() : wDetailsStep();
-  return `<div class="wtabs wtabs5" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${W.tab === k}" class="${W.tab === k ? 'on' : ''}" data-act="wTab" data-tab="${k}">${l}</button>`).join('')}</div>
-   <div class="wbody"><div class="steps" aria-label="Step ${cur} of ${n}">${Array.from({ length: n }, (_, i) => `<span class="${i < cur ? 'on' : ''}"></span>`).join('')}</div>
-   ${W.err ? `<div class="errbox" role="alert" style="margin-bottom:12px">${esc(W.err)}</div>` : ''}${body}</div>`;
+  return `${fixed ? '' : `<div class="wtabs" role="tablist" aria-label="What do you want to book?">${HERO_TABS.map(([k, l, sub]) => `<button role="tab" aria-selected="${W.tab === k}" class="${W.tab === k ? 'on' : ''}" data-act="wTab" data-tab="${k}">${l}<small>${sub}</small></button>`).join('')}</div>`}
+   <div class="wbody"><div class="steps" aria-hidden="true">${Array.from({ length: n }, (_, i) => `<span class="${i < cur ? 'on' : ''}"></span>`).join('')}</div>
+   <div class="steplbl">Step ${cur} of ${n} · <b>${names[cur - 1]}</b></div>
+   ${W.err && !W.errField ? `<div class="errbox" role="alert" style="margin-bottom:12px">${esc(W.err)}</div>` : ''}${body}</div>`;
 }
+const ferr = name => W.err && W.errField === name ? `<div class="ferr" role="alert">${esc(W.err)}</div>` : '';
+const inv = name => W.err && W.errField === name ? 'aria-invalid="true"' : '';
+function stepper(name, val, min, max, label, sub, live = 'w') { // big +/- control instead of a dropdown (easier on phones)
+  val = +val;
+  return `<div class="stp"><span class="stp-l">${label}${sub ? `<small>${sub}</small>` : ''}</span><div class="stp-c" role="group" aria-label="${label}">
+    <button type="button" data-act="stp" data-name="${name}" data-live="${live}" data-d="-1" data-min="${min}" data-max="${max}" ${val <= min ? 'disabled' : ''} aria-label="Fewer ${label.toLowerCase()}">−</button>
+    <output aria-live="polite">${val}</output>
+    <button type="button" data-act="stp" data-name="${name}" data-live="${live}" data-d="1" data-min="${min}" data-max="${max}" ${val >= max ? 'disabled' : ''} aria-label="More ${label.toLowerCase()}">+</button></div></div>`;
+}
+ACT.stp = el => {
+  const o = { w: W, bus: W.bus, air: W.air }[el.dataset.live], k = el.dataset.name;
+  o[k] = Math.min(+el.dataset.max, Math.max(+el.dataset.min, (+o[k] || 0) + +el.dataset.d));
+  if (k === 'children' && +W.childSeats > +W.children) W.childSeats = W.children;
+  rerender();
+};
 const BIKE_ART = '<svg viewBox="0 0 96 52" width="72" height="40" aria-hidden="true"><ellipse cx="48" cy="47" rx="36" ry="3" fill="#dde3dc"/><circle cx="24" cy="38" r="9" fill="none" stroke="#14231c" stroke-width="4"/><circle cx="72" cy="38" r="9" fill="none" stroke="#14231c" stroke-width="4"/><path d="M24 38l14-16h16l10 16M44 22l-4-8h-8M60 22l4-6h8" fill="none" stroke="#06452e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const numSel = (name, val, from, to, label, live = 'w', rr = false) => `<div><label class="f" for="w-${name}">${label}</label><select class="input" id="w-${name}" name="${name}" data-live="${live}" ${rr ? 'data-rr="1"' : ''}>${Array.from({ length: to - from + 1 }, (_, i) => opt(from + i, String(from + i), val)).join('')}</select></div>`;
 function peopleBags() {
-  return `<div class="grid g2 keep2">${numSel('adults', W.adults, 1, 14, 'Adults')}${numSel('children', W.children, 0, 8, 'Children (under 12)', 'w', true)}</div>
-   ${+W.children ? `<div class="grid g2 keep2">${numSel('childSeats', W.childSeats, 0, +W.children, 'Child seats needed')}<div class="hint" style="align-self:end">Children count as passengers.</div></div>` : ''}
-   <div class="grid g2 keep2">${numSel('bigBags', W.bigBags, 0, 20, 'Large bags')}${numSel('smallBags', W.smallBags, 0, 20, 'Small bags')}</div>`;
+  return `<fieldset class="wgroup"><legend>Who is travelling?</legend>
+     ${stepper('adults', W.adults, 1, 14, 'Adults', '12 years and over')}${stepper('children', W.children, 0, 8, 'Children', 'Under 12. They need a seat too.')}
+     ${+W.children ? stepper('childSeats', W.childSeats, 0, +W.children, 'Child seats', 'For small children') : ''}</fieldset>
+   <fieldset class="wgroup"><legend>Luggage</legend>
+     ${stepper('bigBags', W.bigBags, 0, 20, 'Large bags', 'Suitcases, boxes')}${stepper('smallBags', W.smallBags, 0, 20, 'Small bags', 'Hand luggage')}</fieldset>`;
 }
 function wTripStep() {
   const locs = activeLocs(), nonAir = locs.filter(l => !l.isAirport);
@@ -1084,11 +1164,11 @@ function wTripStep() {
   const air = W.tab === 'AIRPORT', arr = W.dir === 'ARRIVING';
   const sugg = air && !arr ? suggestPickup(W.date + 'T' + W.flightTime, W.town) : '';
   return `<div class="stack">
-   ${air ? `<div class="seg" role="group" aria-label="Direction"><button type="button" class="${arr ? 'on' : ''}" data-act="wDir" data-dir="ARRIVING" aria-pressed="${arr}">Arriving in Sri Lanka</button><button type="button" class="${!arr ? 'on' : ''}" data-act="wDir" data-dir="GOING" aria-pressed="${!arr}">Going to the airport</button></div>
+   ${air ? `<div class="seg seg2" role="group" aria-label="Direction"><button type="button" class="${arr ? 'on' : ''}" data-act="wDir" data-dir="ARRIVING" aria-pressed="${arr}">Arriving<small>I land at BIA</small></button><button type="button" class="${!arr ? 'on' : ''}" data-act="wDir" data-dir="GOING" aria-pressed="${!arr}">Departing<small>I fly from BIA</small></button></div>
      <div class="grid g2 keep2">${arr
         ? `<div><label class="f">From</label><div class="fixed-loc">BIA Airport</div></div><div><label class="f" for="w-town">To</label>${sel('town', W.town, nonAir)}</div>`
         : `<div><label class="f" for="w-town">From</label>${sel('town', W.town, nonAir)}</div><div><label class="f">To</label><div class="fixed-loc">BIA Airport</div></div>`}</div>
-     <div class="grid g2 keep2"><div><label class="f" for="w-flightNo">Flight number${arr ? '' : ' <span class="opt">(optional)</span>'}</label><input class="input" id="w-flightNo" name="flightNo" placeholder="QR 668" value="${esc(W.flightNo)}" data-live="w" style="text-transform:uppercase"></div>
+     <div class="grid g2 keep2"><div><label class="f" for="w-flightNo">Flight number${arr ? '' : ' <span class="opt">(optional)</span>'}</label><input class="input" id="w-flightNo" name="flightNo" placeholder="QR 668" value="${esc(W.flightNo)}" data-live="w" autocapitalize="characters" style="text-transform:uppercase" ${inv('flightNo')}>${ferr('flightNo')}</div>
        <div><label class="f" for="w-date">${arr ? 'Landing date' : 'Flight date'}</label><input class="input" type="date" id="w-date" name="date" min="${today()}" value="${esc(W.date)}" data-live="w" data-rr="1"></div></div>
      <div class="grid g2 keep2"><div><label class="f" for="w-flightTime">${arr ? 'Flight lands at' : 'Flight takes off at'}</label><input class="input" type="time" id="w-flightTime" name="flightTime" value="${esc(W.flightTime)}" data-live="w" data-rr="1"></div>
        ${arr ? `<div class="hint" style="align-self:end">We follow your flight and wait ${R_().freeWaitAir} min after it lands.</div>`
@@ -1098,7 +1178,7 @@ function wTripStep() {
        <div class="grid g2 keep2"><div><label class="f" for="w-date">Date</label><input class="input" type="date" id="w-date" name="date" min="${today()}" value="${esc(W.date)}" data-live="w"></div>
        <div><label class="f" for="w-time">Pickup time</label><input class="input" type="time" id="w-time" name="time" value="${esc(W.time)}" data-live="w"></div></div>`}
    ${peopleBags()}
-   <button class="btn btn-gold btn-block" data-act="wNext1">${air ? 'See private and shared prices' : 'See vehicles and prices'}</button></div>`;
+   <button class="btn btn-gold btn-block" data-act="wNext1">${air ? 'See prices' : 'See vehicles and prices'}</button></div>`;
 }
 function wSummary() {
   const t = wTrip(), when = wWhen();
@@ -1115,15 +1195,17 @@ function wChooseStep() {
   }).join('');
   let shared = '';
   if (air) {
-    const sp = seatPriceFor(t.fromId, t.toId), okShared = noticeOk(when, true) && W.flightNo.trim();
-    shared = `<button class="cls ${W.mode === 'SHARED' ? 'on' : ''}" data-act="wShared" ${okShared ? '' : 'disabled'} aria-label="Shared seat">
-      <span>${IC.seat.replace('width="24" height="24"', 'width="48" height="48"')}</span><span><b>Shared seat</b><br><span class="small muted">Travel with others going your way. GoEasy sets the departure time around the flights and confirms it on WhatsApp.</span>
-      <br><span class="tiny muted">${SEAT_BAGS[0]} large + ${SEAT_BAGS[1]} small bag per seat${okShared ? '' : !W.flightNo.trim() ? ' · needs a flight number' : ` · needs ${R_().noticeShared} hours notice`}</span></span>
-      <span class="pr">${sp ? `${rs(sp)}<small>per person</small>` : `Price<small>confirmed by GoEasy</small>`}</span></button>`;
+    const sp = seatPriceFor(t.fromId, t.toId), hasNo = !!W.flightNo.trim(), soon = !noticeOk(when, true), okShared = hasNo && !soon;
+    const art = `<span>${IC.seat.replace('width="24" height="24"', 'width="48" height="48"')}</span>`, price = `<span class="pr">${sp ? `${rs(sp)}<small>per person</small>` : `Price<small>confirmed by GoEasy</small>`}</span>`;
+    shared = okShared
+      ? `<button class="cls ${W.mode === 'SHARED' ? 'on' : ''}" data-act="wShared" aria-label="Shared seat, ${sp ? rs(sp) + ' per person' : 'price confirmed by GoEasy'}">${art}<span><b>Shared seat</b> <span class="pill p-CONFIRMED">Cheaper</span><br><span class="small muted">Share the vehicle with other travellers. We set one departure time around everyone's flights and tell you on WhatsApp.</span>
+        <br><span class="tiny muted">${SEAT_BAGS[0]} large + ${SEAT_BAGS[1]} small bag per seat</span></span>${price}</button>`
+      : `<div class="cls off" role="group" aria-label="Shared seat not available">${art}<span><b>Shared seat</b><br><span class="small">${!hasNo ? 'Add your flight number to see shared seats.' : `Not available: shared seats need ${R_().noticeShared} hours notice, and your trip is sooner.`}</span>
+        <br><button type="button" class="link small" data-act="wStep" data-step="1">${!hasNo ? 'Add flight number' : 'Choose a later date'}</button><span class="tiny muted"> or choose a private vehicle below.</span></span>${price}</div>`;
   }
   return `<div class="stack">${wSummary()}
     ${urgent ? `<div class="warnbox small">Your trip is in less than ${R_().noticePrivate} hours. For urgent trips, please call or WhatsApp us on ${esc(S.settings.company.whatsapp)}. You can still send a quote request.</div>` : ''}
-    ${air ? `<h3 style="margin:4px 0 0">Shared or private?</h3>${shared}<h3 style="margin:8px 0 0">Private vehicle</h3>` : `<h3 style="margin:4px 0 0">Choose a vehicle</h3>`}${cards}
+    ${air ? `<h3 class="wh">Share and save</h3>${shared}<h3 class="wh">Or a private vehicle, just for you</h3>` : `<h3 class="wh">Choose a vehicle</h3>`}${cards}
     ${pax > 12 ? `<div class="warnbox">For more than 12 people, please call or WhatsApp us on ${esc(S.settings.company.whatsapp)}.</div>` : ''}</div>`;
 }
 function wSeatStep() {
@@ -1142,19 +1224,21 @@ function wSeatStep() {
       <div><label class="f" for="s-off">Get off at</label><select class="input" id="s-off" name="off" data-live="seat">${towns.map(t => opt(t, t, st.off)).join('')}</select></div></div>
     ${sch ? `<div><span class="f" style="display:block;font-weight:600;font-size:14px;margin-bottom:6px">Pick your seats</span>${seatMapHtml(sch, st.date, st.seats)}</div>
       <div class="summary-line"><span>${st.seats.length ? `Seat${st.seats.length > 1 ? 's' : ''} ${st.seats.join(', ')} · <b>${rs(st.seats.length * S.settings.seatPrice)}</b>` : 'No seats picked yet'}</span><span class="small muted">${rs(S.settings.seatPrice)} per seat</span></div>` : ''}
-    <div class="grid g2 keep2">${numSel('bigBags', W.bigBags, 0, 10, 'Large bags')}${numSel('smallBags', W.smallBags, 0, 10, 'Small bags')}</div>
-    <button class="btn btn-gold btn-block" data-act="wSeatNext" ${sch && st.seats.length ? '' : 'disabled'}>Continue</button></div>`;
+    ${sch ? `<fieldset class="wgroup"><legend>Luggage</legend>${stepper('bigBags', W.bigBags, 0, 10, 'Large bags', 'Suitcases, boxes')}${stepper('smallBags', W.smallBags, 0, 10, 'Small bags', 'Hand luggage')}</fieldset>` : ''}
+    <button class="btn btn-gold btn-block" data-act="wSeatNext" ${sch && st.seats.length ? '' : 'disabled'}>${sch && st.seats.length ? 'Continue' : sch ? 'Tap a free seat to continue' : 'Choose a departure to continue'}</button></div>`;
 }
-const sharedSwitch = () => `<div class="seg" role="group" aria-label="Shared ride type"><button type="button" class="${W.shared === 'VAN' ? 'on' : ''}" data-act="wShared2" data-v="VAN" aria-pressed="${W.shared === 'VAN'}">Sharing van</button><button type="button" class="${W.shared === 'BUS' ? 'on' : ''}" data-act="wShared2" data-v="BUS" aria-pressed="${W.shared === 'BUS'}">Bus seats</button></div>`;
+const sharedSwitch = () => `<div class="seg seg2" role="group" aria-label="Van or bus"><button type="button" class="${W.shared === 'VAN' ? 'on' : ''}" data-act="wShared2" data-v="VAN" aria-pressed="${W.shared === 'VAN'}">Sharing van<small>Pick your seat</small></button><button type="button" class="${W.shared === 'BUS' ? 'on' : ''}" data-act="wShared2" data-v="BUS" aria-pressed="${W.shared === 'BUS'}">Bus<small>We book the seats</small></button></div>
+  <p class="small muted" style="margin:0">${W.shared === 'VAN' ? 'Our daily van between Akkaraipattu and Colombo. Choose a departure, then tap your seats.' : 'Tell us the route and how many seats. We book with the bus company and send you the bus and seat numbers.'}</p>
+  <p class="tiny muted" style="margin:0">Landing at BIA? Shared airport seats are on the <button type="button" class="link tiny" data-act="wTab" data-tab="AIRPORT">Airport</button> tab.</p>`;
 function wBusStep() {
   const locs = activeLocs().filter(l => !l.isAirport), b = W.bus;
   return `<div class="stack">${sharedSwitch()}
-    <div class="infobox small">Tell us your route and how many seats you need. We book the seats with the bus operator and send you the bus and seat numbers. You do not pick seats here.</div>
     <div class="grid g2 keep2"><div><label class="f" for="b-from">From</label><select class="input" id="b-from" name="from" data-live="bus">${locs.map(l => opt(l.id, l.name, b.from)).join('')}</select></div>
       <div><label class="f" for="b-to">To</label><select class="input" id="b-to" name="to" data-live="bus">${locs.map(l => opt(l.id, l.name, b.to)).join('')}</select></div></div>
     <div class="grid g2 keep2"><div><label class="f" for="b-date">Travel date</label><input class="input" type="date" id="b-date" name="date" min="${today()}" value="${esc(b.date)}" data-live="bus"></div>
-      ${numSel('seats', b.seats, 1, 10, 'Seats needed', 'bus')}</div>
-    <div class="grid g2 keep2">${numSel('bigBags', W.bigBags, 0, 10, 'Large bags')}${numSel('smallBags', W.smallBags, 0, 10, 'Small bags')}</div>
+      <div></div></div>
+    ${stepper('seats', b.seats, 1, 10, 'Seats needed', '', 'bus')}
+    <fieldset class="wgroup"><legend>Luggage</legend>${stepper('bigBags', W.bigBags, 0, 10, 'Large bags', 'Suitcases, boxes')}${stepper('smallBags', W.smallBags, 0, 10, 'Small bags', 'Hand luggage')}</fieldset>
     <button class="btn btn-gold btn-block" data-act="wBusNext">Continue</button></div>`;
 }
 function wRentStep() {
@@ -1173,13 +1257,12 @@ function wRentStep() {
 function wAirStep() {
   const a = W.air;
   return `<div class="stack">
-    <div class="infobox small">Tell us your trip. We find fares and book through our licensed partner (${esc(R_().airPartner)}). No payment here.</div>
     <div class="seg" role="group" aria-label="Trip type"><button type="button" class="${!a.returnTrip ? 'on' : ''}" data-act="wAirRet" data-v="0" aria-pressed="${!a.returnTrip}">One way</button><button type="button" class="${a.returnTrip ? 'on' : ''}" data-act="wAirRet" data-v="1" aria-pressed="${a.returnTrip}">Return</button></div>
     <div class="grid g2 keep2"><div><label class="f" for="a-from">From (city or airport)</label><input class="input" id="a-from" name="from" value="${esc(a.from)}" data-live="air"></div>
       <div><label class="f" for="a-to">To (city or airport)</label><input class="input" id="a-to" name="to" placeholder="Doha (DOH)" value="${esc(a.to)}" data-live="air"></div></div>
     <div class="grid g2 keep2"><div><label class="f" for="a-depart">Departure date</label><input class="input" type="date" id="a-depart" name="depart" min="${today()}" value="${esc(a.depart)}" data-live="air"></div>
       ${a.returnTrip ? `<div><label class="f" for="a-ret">Return date</label><input class="input" type="date" id="a-ret" name="ret" min="${esc(a.depart)}" value="${esc(a.ret)}" data-live="air"></div>` : '<div></div>'}</div>
-    <div class="grid g3 keep3">${numSel('adults', a.adults, 1, 9, 'Adults', 'air')}${numSel('children', a.children, 0, 8, 'Children', 'air')}${numSel('infants', a.infants, 0, 4, 'Infants', 'air')}</div>
+    <fieldset class="wgroup"><legend>Travellers</legend>${stepper('adults', a.adults, 1, 9, 'Adults', '12 years and over', 'air')}${stepper('children', a.children, 0, 8, 'Children', '2 to 11 years', 'air')}${stepper('infants', a.infants, 0, 4, 'Infants', 'Under 2, on your lap', 'air')}</fieldset>
     <div class="grid g2 keep2"><div><label class="f" for="a-cabin">Cabin</label><select class="input" id="a-cabin" name="cabin" data-live="air">${opt('ECONOMY', 'Economy', a.cabin)}${opt('BUSINESS', 'Business', a.cabin)}</select></div>
       <div><label class="f" for="a-airline">Preferred airline <span class="opt">(optional)</span></label><input class="input" id="a-airline" name="airline" value="${esc(a.airline)}" data-live="air"></div></div>
     <button class="btn btn-gold btn-block" data-act="wAirNext">Continue</button></div>`;
@@ -1207,19 +1290,23 @@ function wDetailsStep() {
        ${PAYHERE_ENABLED ? `<label class="check"><input type="radio" name="pay" value="CARD"> <span>Pay now by card</span></label>` : ''}
        <label class="check"><input type="radio" name="pay" value="BANK_TRANSFER" checked> <span>Bank transfer<br><span class="small muted">We show our bank details after you book.</span></span></label></div></div>`;
   const btn = P.kind === 'RENTAL' || P.kind === 'AIR' || P.kind === 'BUS' ? 'Send request' : P.kind === 'SHARED_AIRPORT' ? 'Request shared seats' : P.quote ? 'Request a quote' : 'Book now';
-  const trip = !['RENTAL', 'AIR'].includes(P.kind);
+  const trip = !['RENTAL', 'AIR'].includes(P.kind), road = W.tab === 'AIRPORT' || W.tab === 'PRIVATE';
   return `<form class="stack" data-form="book" novalidate><div class="summary-line"><span>${P.line}</span><button class="link" data-act="wStep" data-step="${P.back}">Change</button></div>
-    <div><label class="f" for="d-name">Full name</label><input class="input" id="d-name" name="name" autocomplete="name" value="${esc(W.name)}" data-live="w" required></div>
-    <div><label class="f" for="d-phone">Phone number</label><input class="input" id="d-phone" name="phone" type="tel" autocomplete="tel" placeholder="077 123 4567 or +974 5555 1234" value="${esc(W.phone)}" data-live="w" required></div>
-    <label class="check"><input type="checkbox" name="hasWa" ${W.hasWa ? 'checked' : ''} data-live="w" data-rr="1"> <span>This number has WhatsApp</span></label>
-    ${W.hasWa ? '' : `<div><label class="f" for="d-wa">WhatsApp number <span class="opt">(optional)</span></label><input class="input" id="d-wa" name="wa" type="tel" value="${esc(W.wa)}" data-live="w"></div>`}
+    <fieldset class="wgroup"><legend>Your contact details</legend>
+    <div><label class="f" for="d-name">Full name</label><input class="input" id="d-name" name="name" autocomplete="name" value="${esc(W.name)}" data-live="w" required ${inv('name')}>${ferr('name')}</div>
+    <div><label class="f" for="d-phone">Phone number</label><input class="input" id="d-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="077 123 4567 or +974 5555 1234" value="${esc(W.phone)}" data-live="w" required ${inv('phone')}>${ferr('phone')}
+      <div class="hint">From abroad, start with + and your country code.</div></div>
+    <label class="check"><input type="checkbox" name="hasWa" ${W.hasWa ? 'checked' : ''} data-live="w" data-rr="1"> <span>This number has WhatsApp <span class="muted small">(we send updates there)</span></span></label>
+    ${W.hasWa ? '' : `<div><label class="f" for="d-wa">WhatsApp number <span class="opt">(optional)</span></label><input class="input" id="d-wa" name="wa" type="tel" inputmode="tel" value="${esc(W.wa)}" data-live="w" ${inv('wa')}>${ferr('wa')}</div>`}
     <div class="grid g2 keep2"><div><label class="f" for="d-country">Country you live in</label><select class="input" id="d-country" name="country" data-live="w">${COUNTRIES.map(c => opt(c, c, W.country)).join('')}</select></div>
-      <div><label class="f" for="d-email">Email <span class="opt">(we email your confirmation)</span></label><input class="input" id="d-email" name="email" type="email" value="${esc(W.email)}" data-live="w"></div></div>
-    ${trip ? `<label class="check"><input type="checkbox" name="forOther" ${W.forOther ? 'checked' : ''} data-live="w" data-rr="1"> <span>I am booking for someone else</span></label>
-    ${W.forOther ? `<div class="grid g2 keep2"><div><label class="f" for="d-tname">Traveller's name</label><input class="input" id="d-tname" name="tName" value="${esc(W.tName)}" data-live="w"></div><div><label class="f" for="d-tphone">Traveller's phone (WhatsApp)</label><input class="input" id="d-tphone" name="tPhone" type="tel" value="${esc(W.tPhone)}" data-live="w"></div></div>
-      <p class="hint" style="margin:-6px 0 0">The driver calls the traveller. Confirmations and payment come to you.</p>` : ''}
-    ${W.tab === 'AIRPORT' || W.tab === 'PRIVATE' ? `<div><label class="f" for="d-special">Special needs <span class="opt">(optional)</span></label><input class="input" id="d-special" name="special" placeholder="Wheelchair, elderly parent, big boxes…" value="${esc(W.special)}" data-live="w"></div>` : ''}` : ''}
-    <div><label class="f" for="d-notes">Notes <span class="opt">(optional)</span></label><textarea class="input" id="d-notes" name="notes" rows="2" data-live="w">${esc(W.notes)}</textarea></div>
+      <div><label class="f" for="d-email">Email <span class="opt">(optional)</span></label><input class="input" id="d-email" name="email" type="email" inputmode="email" autocomplete="email" value="${esc(W.email)}" data-live="w" ${inv('email')}>${ferr('email')}<div class="hint">We email your confirmation.</div></div></div></fieldset>
+    ${trip ? `<fieldset class="wgroup"><legend>Who is travelling?</legend>
+      <div class="seg seg2" role="group" aria-label="Who is travelling"><button type="button" class="${!W.forOther ? 'on' : ''}" data-act="wFor" data-v="0" aria-pressed="${!W.forOther}">Me<small>I am travelling</small></button><button type="button" class="${W.forOther ? 'on' : ''}" data-act="wFor" data-v="1" aria-pressed="${W.forOther}">Someone else<small>Family or a friend</small></button></div>
+      ${W.forOther ? `<div class="grid g2 keep2"><div><label class="f" for="d-tname">Traveller's name</label><input class="input" id="d-tname" name="tName" value="${esc(W.tName)}" data-live="w" ${inv('tName')}>${ferr('tName')}</div><div><label class="f" for="d-tphone">Traveller's phone</label><input class="input" id="d-tphone" name="tPhone" type="tel" inputmode="tel" value="${esc(W.tPhone)}" data-live="w" ${inv('tPhone')}>${ferr('tPhone')}</div></div>
+        <p class="hint" style="margin:0">The driver calls the traveller. You get the confirmation and pay.</p>` : ''}</fieldset>` : ''}
+    <details class="wmore" ${W.special || W.notes ? 'open' : ''}><summary>Add ${road ? 'special needs or ' : ''}a note <span class="opt">(optional)</span></summary>
+      ${road ? `<div><label class="f" for="d-special">Special needs</label><input class="input" id="d-special" name="special" placeholder="Wheelchair, elderly parent, big boxes" value="${esc(W.special)}" data-live="w"></div>` : ''}
+      <div><label class="f" for="d-notes">Note for GoEasy</label><textarea class="input" id="d-notes" name="notes" rows="2" data-live="w">${esc(W.notes)}</textarea></div></details>
     <div class="sr" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
     ${priceBox}
     ${trip ? `<p class="small muted" style="margin:0"><b>Cancellation:</b> ${esc(r.cancellationPolicy)}</p>` : ''}
@@ -1227,6 +1314,7 @@ function wDetailsStep() {
     <button class="btn btn-gold btn-block" type="submit">${btn}</button>
     <p class="tiny muted center" style="margin:0">By sending you agree to our <a href="#/terms">terms</a> and <a href="#/privacy">privacy notice</a>.</p></form>`;
 }
+ACT.wFor = el => { W.forOther = el.dataset.v === '1'; rerender(); };
 LIVE.w = el => { W[el.name] = el.type === 'checkbox' ? el.checked : el.value; if (['flightTime', 'date', 'town'].includes(el.name)) W.pickup = ''; if (el.dataset.rr) rerender(); };
 LIVE.seat = el => {
   const st = W.seat; st[el.name] = el.value;
@@ -1237,7 +1325,7 @@ LIVE.seat = el => {
 LIVE.bus = el => { W.bus[el.name] = el.value; };
 LIVE.rent = el => { W.rent[el.name] = el.value; if (el.name === 'start' && W.rent.end < el.value) W.rent.end = addDays(el.value, 1); rerender(); };
 LIVE.air = el => { W.air[el.name] = el.value; };
-ACT.wTab = el => { W.tab = el.dataset.tab; W.step = 1; W.err = ''; W.cls = null; W.mode = null; if (el.dataset.scroll) { go(''); } rerender(); if (el.dataset.scroll) $('#book').scrollIntoView({ behavior: 'smooth' }); };
+ACT.wTab = el => { if (el.dataset.tab === 'RENTAL' || el.dataset.tab === 'AIR') return go(el.dataset.tab === 'RENTAL' ? 'rentals' : 'air-tickets'); W.tab = el.dataset.tab; W.step = 1; W.err = ''; W.cls = null; W.mode = null; if (el.dataset.scroll) { go(''); } rerender(); if (el.dataset.scroll) $('#book').scrollIntoView({ behavior: 'smooth' }); };
 ACT.wDir = el => { W.dir = el.dataset.dir; W.pickup = ''; rerender(); };
 ACT.wStep = el => { W.step = +el.dataset.step; W.err = ''; rerender(); };
 ACT.wShared2 = el => { W.shared = el.dataset.v; W.err = ''; rerender(); };
@@ -1245,12 +1333,12 @@ ACT.wRentType = el => { W.rent.type = el.dataset.v; W.rent.vehicleId = null; rer
 ACT.wRentPick = el => { W.rent.vehicleId = el.dataset.id; rerender(); };
 ACT.wAirRet = el => { W.air.returnTrip = el.dataset.v === '1'; rerender(); };
 ACT.wNext1 = () => {
-  const t = wTrip(); W.err = '';
+  const t = wTrip(); W.err = ''; W.errField = '';
   const when = wWhen();
   if (!t.fromId || !t.toId) W.err = 'Please choose where you start and where you go.';
   else if (t.fromId === t.toId) W.err = 'From and To must be different places.';
   else if (!W.date || W.date < today()) W.err = 'Please choose today or a later date.';
-  else if (W.tab === 'AIRPORT' && W.dir === 'ARRIVING' && !W.flightNo.trim()) W.err = 'Please enter your flight number. We use it to follow your flight.';
+  else if (W.tab === 'AIRPORT' && W.dir === 'ARRIVING' && !W.flightNo.trim()) { W.err = 'Please enter your flight number. We use it to follow your flight.'; W.errField = 'flightNo'; }
   else if (W.tab === 'AIRPORT' && !W.flightTime) W.err = 'Please enter the flight time.';
   else if (when <= nowLocal()) W.err = 'That time has already passed. Please check the date and time.';
   if (!W.err) W.step = 2; rerender();
@@ -1296,15 +1384,17 @@ function upsertCustomer({ name, phone, wa, country, email, optIn }) {
 }
 /* "server" checks: valid places, date and notice, flight number, pax within class, price recomputed, seats still free, honeypot */
 FORM.book = (f, d) => {
-  W.err = '';
+  W.err = ''; W.errField = '';
   if (d.website) { toast('Thank you.'); return; } // honeypot: silently drop bots
   const phone = normPhone(d.phone), wa = W.hasWa ? phone : normPhone(d.wa), tPhone = normPhone(W.tPhone);
-  if (!d.name || d.name.length < 2) W.err = 'Please enter your full name.';
-  else if (!phoneOk(phone)) W.err = 'Please enter a valid phone number.';
-  else if (!W.hasWa && d.wa && !phoneOk(wa)) W.err = 'Please enter a valid WhatsApp number, or leave it empty.';
-  else if (d.email && !/^\S+@\S+\.\S+$/.test(d.email)) W.err = 'Please check your email address.';
-  else if (W.forOther && (!W.tName.trim() || !phoneOk(tPhone))) W.err = "Please enter the traveller's name and phone number.";
-  if (W.err) return rerender();
+  const bad = (field, msg) => { W.err = msg; W.errField = field; };
+  if (!d.name || d.name.length < 2) bad('name', 'Please enter your full name.');
+  else if (!phoneOk(phone)) bad('phone', 'Please enter a valid phone number, for example 077 123 4567 or +974 5555 1234.');
+  else if (!W.hasWa && d.wa && !phoneOk(wa)) bad('wa', 'Please enter a valid WhatsApp number, or leave it empty.');
+  else if (d.email && !/^\S+@\S+\.\S+$/.test(d.email)) bad('email', 'Please check your email address.');
+  else if (W.forOther && !W.tName.trim()) bad('tName', "Please enter the traveller's name.");
+  else if (W.forOther && !phoneOk(tPhone)) bad('tPhone', "Please enter the traveller's phone number.");
+  if (W.err) { rerender(); setTimeout(() => $(`[name="${W.errField}"]`)?.focus(), 0); return; }
   const now = new Date().toISOString(), P = wPriced();
   const c = upsertCustomer({ name: d.name, phone, wa, country: d.country, email: d.email, optIn: !!d.optIn });
   const contact = { customerId: c.id, contactName: d.name, contactPhone: phone, contactWhatsapp: wa || null, country: d.country, email: d.email || '' };
@@ -1412,6 +1502,8 @@ function confirmPage(tok) {
       <h1 style="font-size:30px">${title}</h1>
       <p class="muted" style="margin:0">Your booking code is <b class="num" style="color:var(--ink)">${esc(x.code)}</b>. Keep this page to see your booking.</p>
       <div style="margin-top:8px">${statusPill}</div></div>
+    ${cancelled ? '' : nextStepsHtml(x, { quote, waitingTrip, waitingBus, paid })}
+    <h3 style="margin:0">Your booking</h3>
     <dl class="kv">${tripRows(x).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
     ${quote ? '' : `<div class="pricebox"><div class="l"><span>Total</span><span class="num">${rs(x.total)}</span></div><div class="l"><span>Advance</span><span class="num">${rs(x.advance)} · ${paid ? 'paid' : 'due'}</span></div><div class="l t"><span>Pay on the day</span><span class="num">${rs(x.total - (paid ? x.advance : 0))}</span></div>
       <p class="small muted" style="margin:6px 0 0"><b>Price includes:</b> ${esc(r.priceIncludes)}</p></div>`}
@@ -1422,6 +1514,15 @@ function confirmPage(tok) {
       ${cancelled || x.status === 'COMPLETED' ? '' : `<button class="btn btn-ghost" data-act="changeReq" data-tok="${esc(x.token)}">Request a change or cancellation</button>`}
       <a class="btn btn-ghost" href="#/">Make another booking</a></div>
   </div></div>`;
+}
+function nextStepsHtml(x, f) { // a plain "what happens next" list with the current step marked
+  let steps;
+  if (f.waitingTrip) steps = [['We got your request', true], ['We set the departure time around the flights and WhatsApp you', false], [x.total ? `You pay the advance of ${rs(x.advance)}` : 'We confirm the price', false], ['We meet you at BIA', false]];
+  else if (f.waitingBus) steps = [['We got your request', true], ['We book the seats with the bus company', false], ['We WhatsApp you the bus, seats and price', false]];
+  else if (f.quote) steps = [['We got your request', true], ['We WhatsApp you a price, usually within a few hours', false], ['You pay a small advance to confirm', false], ['We send your driver details before the trip', false]];
+  else steps = [['Booking received', true], [`Pay the advance of ${rs(x.advance)}`, f.paid], ["We confirm and send your driver's name and phone", ['ASSIGNED', 'COMPLETED'].includes(x.status) || (isSeatBk(x) && x.status === 'CONFIRMED')], [x.dir === 'ARRIVING' ? 'Meet your driver in the arrival lobby' : 'Your trip', x.status === 'COMPLETED']];
+  const cur = steps.findIndex(z => !z[1]);
+  return `<ol class="timeline" aria-label="What happens next">${steps.map(([t, done], i) => `<li class="${done ? 'done' : i === cur ? 'cur' : ''}"><span class="dot">${done ? IC.tick.replace(/20/g, '14') : i + 1}</span><span>${esc(t)}${i === cur ? ' <b class="small">← next</b>' : ''}</span></li>`).join('')}</ol>`;
 }
 ACT.changeReq = el => { // logged for the admin, then WhatsApp opens (CLAUDE.md 9.21 G)
   const x = findByToken(el.dataset.tok) || findRequest(el.dataset.tok); if (!x) return;
@@ -1926,12 +2027,52 @@ function aShell(u, page, inner) {
   const c = counts();
   const airportOpen = S.bookings.filter(b => b.kind === 'AIRPORT' && ['NEW', 'QUOTE_REQUESTED', 'CONFIRMED'].includes(b.status)).length;
   if (page === 'bookings' && R.q.kind === 'AIRPORT') page = 'bookings?kind=AIRPORT';
-  const nav = [['dashboard', 'Dashboard'], ['bookings', 'Bookings', c.bookings], ['bookings?kind=AIRPORT', 'Airport bookings', airportOpen], ['shared-trips', 'Shared trips', c.seats], ['rentals', 'Rentals', c.rentals], ['air-tickets', 'Air tickets', c.air],
-    ['owners', 'Owners and vehicles'], ['approvals', 'Approvals', c.approvals], ['finance', 'Finance', c.payments], ['customers', 'Customers'], ['messages', 'Messages'], ['prices', 'Prices'], ['settings', 'Settings']];
+  const groups = [['', [['dashboard', 'Dashboard']]],
+    ['Trips', [['bookings', 'All bookings', c.bookings], ['bookings?kind=AIRPORT', 'Airport bookings', airportOpen], ['shared-trips', 'Shared seats and trips', c.seats]]],
+    ['Requests', [['rentals', 'Rentals', c.rentals], ['air-tickets', 'Air tickets', c.air]]],
+    ['Partners', [['owners', 'Owners and vehicles'], ['approvals', 'Approvals', c.approvals]]],
+    ['Money', [['finance', 'Finance', c.payments]]],
+    ['Customers', [['customers', 'Customer list'], ['messages', 'Messages']]],
+    ['Setup', [['prices', 'Prices'], ['settings', 'Settings']]]];
+  const link = ([k, l, n]) => `<a class="nav ${page === k ? 'on' : ''}" href="#/admin/${k === 'dashboard' ? '' : k}" ${page === k ? 'aria-current="page"' : ''}><span>${l}</span>${n ? `<span class="badge" aria-label="${n} waiting">${n}</span>` : ''}</a>`;
+  inner = withHelp(page.split('?')[0], inner);
   return `<div class="admin"><aside class="side" aria-label="Admin menu"><a class="brand" href="#/admin">${LOGO()}<div><b>GoEasy Admin</b><span>AMS Tours Lanka</span></div></a>
-    ${nav.map(([k, l, n]) => `<a class="nav ${page === k ? 'on' : ''}" href="#/admin/${k === 'dashboard' ? '' : k}" ${page === k ? 'aria-current="page"' : ''}><span>${l}</span>${n ? `<span class="badge">${n}</span>` : ''}</a>`).join('')}
+    ${groups.map(([h, items]) => `${h ? `<div class="navh">${h}</div>` : ''}${items.map(link).join('')}`).join('')}
     <div class="me">Signed in as<br><b style="color:#fff">${esc(u.name)}</b><br><button class="link" style="color:var(--gold)" data-act="signOut">Sign out</button></div></aside>
     <main class="main">${inner}</main></div>`;
+}
+
+/* ---------- page guides: one line on what the page is for, plus how to use it ---------- */
+const HELP = {
+  bookings: ['Every private car, van and KDH trip, from the website and from phone or WhatsApp.', ['Open a booking to confirm it, set a quote price or mark the advance received.', 'Assign a vehicle on the right side of the booking. The money breakdown updates as you type.', 'After the trip, mark it completed. The owner\'s settlement then becomes due.']],
+  'shared-trips': ['Seats sold one by one: shared airport seats, the daily sharing van, and bus seats.', ['Airport: tick the waiting requests on the same day, then create a trip with one departure time.', 'Open the trip, send each passenger the departure details on WhatsApp, and assign a vehicle.', 'Sharing van and Bus: use the tabs above.']],
+  rentals: ['Self-drive requests. No payment happens on the website.', ['Call or WhatsApp the customer.', 'Change the status as you go: Contacted, Confirmed, Completed.', 'Write the agreed price and deposit notes so the team can see them.']],
+  'air-tickets': ['Air ticket requests, booked through the licensed partner.', ['Check fares with the partner.', 'Enter the fare and your service fee, set the status to Quoted, and send the fares on WhatsApp.', 'When the ticket is issued, set Ticketed.']],
+  finance: ['All platform money in one place: what customers paid, what owners collected, commission, and who owes whom.', ['Overview: the numbers for a date range.', 'Owner settlements: verify payments owners record, and pay owners what GoEasy owes.', 'Reports: print or export for the accountant.']],
+  owners: ['Vehicle owners and the own fleet. Click an owner to see vehicles, documents and the statement.', null],
+  approvals: ['New owners and vehicles waiting for you. Approve, ask for changes, or reject with a reason the owner can read.', null],
+  customers: ['Everyone who booked. Customers are saved from bookings automatically.', null],
+  messages: ['Send one message to many customers, one WhatsApp at a time. Offers go only to customers who agreed.', null],
+  prices: ['Fixed prices per route. An empty price means the customer gets a quote.', null],
+  settings: ['Company details, rules for waiting, notice and cancellation, and locations.', null],
+};
+function withHelp(page, inner) { // insert the guide right under the page title row
+  const h = HELP[page]; if (!h || R.path[2]) return inner;
+  const box = `<details class="help" ${S.helpSeen?.[page] ? '' : 'open'} data-help="${page}"><summary><span>${esc(h[0])}</span></summary>${h[1] ? `<ol>${h[1].map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}</details>`;
+  if (!inner.startsWith('<div class="ph-row')) return box + inner;
+  let depth = 0, i = 0; const re = /<\/?div\b[^>]*>/g; let m;
+  while ((m = re.exec(inner))) { depth += m[0][1] === '/' ? -1 : 1; if (depth === 0) { i = m.index + m[0].length; break; } }
+  return inner.slice(0, i) + box + inner.slice(i);
+}
+document.addEventListener('toggle', e => { const d = e.target; if (d.dataset?.help && !d.open) { S.helpSeen = { ...(S.helpSeen || {}), [d.dataset.help]: true }; save(); } }, true);
+function nextActionHtml(b) { // what the admin should do next with this booking
+  const a = b.assignment, txt = {
+    QUOTE_REQUESTED: 'Next: set the price below. Then send it to the customer on WhatsApp.',
+    NEW: b.advancePaidAt ? 'Next: press Confirm booking, then assign a vehicle.' : `Next: check the trip and press Confirm booking. The advance of ${rs(b.advance)} is not received yet.`,
+    CONFIRMED: 'Next: assign a vehicle and driver on the right.' + (b.advance && !b.advancePaidAt ? ` The advance of ${rs(b.advance)} is not received yet.` : ''),
+    ASSIGNED: !a?.driverPhone ? 'Next: add the driver name and phone, then send the trip details to the owner.' : b.dir === 'ARRIVING' && !b.flightCheckedAt ? 'Next: on the travel day, check the flight and press "Flight checked today". After the trip, mark it completed.' : 'Next: after the trip, mark it completed.',
+  }[b.status];
+  return txt ? `<div class="nextbox" role="status"><b>What to do</b><span>${esc(txt)}</span></div>` : '';
 }
 
 /* ---------- dashboard ---------- */
@@ -2092,7 +2233,7 @@ function aBooking(id) {
       ${b.assignment && b.assignment.driverPhone && !canc ? `<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(b.assignment.driverPhone, ownerTripText(b))}">${IC.wa} Trip details to driver</a>` : ''}
       <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(custWa, `Hello ${b.contactName}, this is GoEasy Travels about your booking ${b.code}. `)}">${IC.wa} Message customer</a></div></div>`;
   return { html: `<div class="ph-row"><div><a href="#/admin/bookings" class="small">Bookings</a><h1>${esc(b.code)} ${pill(st)}</h1><div class="muted small">${KIND_LABEL[b.kind]} · ${SOURCE_LABEL[b.source]} · created ${fmtStamp(b.createdAt)}</div></div></div>
-  <div class="stack-lg">${flow}${canc ? `<div class="errbox">Cancelled. Reason: ${esc(b.cancelledReason)}</div>` : ''}
+  <div class="stack-lg">${flow}${nextActionHtml(b)}${canc ? `<div class="errbox">Cancelled. Reason: ${esc(b.cancelledReason)}</div>` : ''}
   <div class="grid g2" style="align-items:start"><div class="stack-lg">
     ${b.changeRequestedAt && !b.changeHandledAt && !canc ? `<div class="warnbox row between wrapx"><span>The customer asked for a change or cancellation (${fmtStamp(b.changeRequestedAt)}). Check WhatsApp.</span><button class="btn btn-ghost btn-sm" data-act="changeHandled" data-kind="booking" data-id="${b.id}">Mark handled</button></div>` : ''}
     <div class="card"><h3>Trip</h3><dl class="kv"><dt>From</dt><dd>${esc(locName(b.fromId))}</dd><dt>To</dt><dd>${esc(locName(b.toId))}</dd>
@@ -2837,9 +2978,9 @@ function seatTabs(tab) {
 }
 function aSharingVan() {
   const tab = R.q.tab || 'airport';
-  if (tab === 'van') return `<div class="ph-row"><h1>Shared trips</h1></div>${seatTabs(tab)}${vanSection()}`;
-  if (tab === 'bus') return `<div class="ph-row"><h1>Shared trips</h1></div>${seatTabs(tab)}${busSection()}`;
-  return `<div class="ph-row"><h1>Shared trips</h1></div>${seatTabs(tab)}${airportSection()}`;
+  if (tab === 'van') return `<div class="ph-row"><h1>Shared seats and trips</h1></div>${seatTabs(tab)}${vanSection()}`;
+  if (tab === 'bus') return `<div class="ph-row"><h1>Shared seats and trips</h1></div>${seatTabs(tab)}${busSection()}`;
+  return `<div class="ph-row"><h1>Shared seats and trips</h1></div>${seatTabs(tab)}${airportSection()}`;
 }
 function airportSection() {
   const now = nowLocal(), r = R_();
@@ -2912,7 +3053,7 @@ function aTrip(id) {
   syncTrip(t);
   const list = S.seatBookings.filter(b => b.tripId === t.id).sort((a, b) => a.code.localeCompare(b.code)), done = t.status === 'COMPLETED', canc = t.status === 'CANCELLED';
   const going = t.dir === 'GOING';
-  return { html: `<div class="ph-row"><div><a href="#/admin/shared-trips" class="small">Shared trips</a><h1>${esc(t.code)} ${pill(t.status)}</h1><div class="muted small">${t.dir === 'ARRIVING' ? 'Shared airport pickup' : 'Shared airport drop'} · ${fmtDay(t.date)} ${t.date.slice(0, 4)}</div></div>
+  return { html: `<div class="ph-row"><div><a href="#/admin/shared-trips" class="small">Shared seats and trips</a><h1>${esc(t.code)} ${pill(t.status)}</h1><div class="muted small">${t.dir === 'ARRIVING' ? 'Shared airport pickup' : 'Shared airport drop'} · ${fmtDay(t.date)} ${t.date.slice(0, 4)}</div></div>
     <div class="row wrapx">${t.assignment ? `<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(t.assignment.driverPhone || ownerById(t.assignment.ownerId).whatsapp || ownerById(t.assignment.ownerId).mobile, tripText(t))}">${IC.wa} Trip details to ${t.assignment.driverPhone ? 'driver' : 'owner'}</a>` : ''}
       ${t.status === 'ASSIGNED' ? `<button class="btn btn-sm" data-act="completeTrip" data-id="${t.id}">Mark trip completed</button>` : ''}</div></div>
   <div class="grid g2" style="align-items:start"><div class="stack-lg">
